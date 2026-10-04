@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الروبوت التعليمي: نموذج ثلاثي الأبعاد مع المكوّنات</title>
+<style>
+:root{--bg:#faf9f5;--fg:#1f1e1d;--mut:#6b6a66;--card:#fff;--line:#e3e1d8;--ac:#d9731a;--acbg:rgba(217,115,26,.14);--ok:#0f6e56;--warn:#a8541a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b19;--fg:#ecebe6;--mut:#a3a199;--card:#262522;--line:#3a3935;--ac:#f09a45;--acbg:rgba(240,154,69,.18);--ok:#4cc3a0;--warn:#e8985a}}
+:root[data-theme="dark"]{--bg:#1c1b19;--fg:#ecebe6;--mut:#a3a199;--card:#262522;--line:#3a3935;--ac:#f09a45;--acbg:rgba(240,154,69,.18);--ok:#4cc3a0;--warn:#e8985a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:22px 14px 50px}
+h1{font-size:23px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 10px;padding-bottom:5px;border-bottom:2px solid var(--ac)}
+.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+.wrap{display:flex;flex-wrap:wrap;gap:12px}
+#viewer{position:relative;flex:1 1 440px;height:560px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#tip{position:absolute;left:10px;top:10px;padding:3px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:13px;display:none}
+.rl{position:absolute;right:10px;top:10px;padding:3px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:12px}
+.side{flex:1 1 200px;font-size:13px}
+.pn{font-size:12px;color:var(--mut);margin:10px 0 4px}.pn:first-child{margin-top:0}
+.sl{display:flex;justify-content:space-between;font-size:12px;margin-top:8px}
+.bt{font:inherit;font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+.bt.on{background:var(--acbg);border-color:var(--ac);color:var(--ac)}
+.row{display:flex;flex-wrap:wrap;gap:6px}input[type=range]{width:100%}
+#info{padding:8px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);line-height:1.6}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line)}th{background:var(--acbg)}tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--acbg)}tbody tr.on{background:var(--acbg);outline:2px solid var(--ac);outline-offset:-2px}
+.g{color:var(--ok);font-weight:600}.t{color:var(--warn);font-weight:600}
+footer{margin-top:26px;color:var(--mut);font-size:12.5px}
+</style>
+</head>
+<body>
+<main>
+<h1>الروبوت التعليمي: نموذج ثلاثي الأبعاد</h1>
+<p class="sub">الارتفاع 100 سم (من صورتك) · اسحب للتدوير · عجلة الماوس أو إصبعان للتكبير · اضغط على أي قطعة أو أي صف في الجدول</p>
+<div class="wrap">
+<div id="viewer"><canvas id="c"></canvas><div id="tip"></div><div class="rl"><span style="color:#ef9f27">┃</span> الخط الأصفر = 100 سم</div></div>
+<div class="side">
+<div class="pn">الأبعاد (سم)</div>
+<div class="sl"><span>الارتفاع (من صورتك)</span><b>100 ثابت</b></div>
+<div class="sl"><span>قطر العجلة (افتراض)</span><b id="vD">24</b></div><input type="range" id="sD" min="20" max="32" value="24">
+<div class="sl"><span>تكبير القطع الداخلية</span><b id="vC">2</b></div><input type="range" id="sC" min="1" max="3" step="0.5" value="2">
+<div class="pn">زاوية العرض</div><div id="views" class="row"></div>
+<div class="pn">عرض مفكّك</div><input type="range" id="ex" min="0" max="100" value="0">
+<div class="pn">إظهار قسم</div><div id="grp" class="row"></div>
+<div class="pn">خيارات</div><div class="row"><button class="bt" id="b1">غلاف شفاف</button><button class="bt" id="b2">دوران تلقائي</button></div>
+<div class="pn">القطعة المحددة</div><div id="info">اضغط على أي قطعة</div>
+</div></div>
+
+<h2>المكوّنات المستخدمة</h2>
+<p class="sub">اضغط على أي صف ليُضاء مكان القطعة داخل الروبوت (يُفعَّل الغلاف الشفاف تلقائياً). اضغط ثانية لإلغاء التحديد.</p>
+<div class="tw"><table>
+<thead><tr><th>المكوّن</th><th>العدد</th><th>الموقع</th><th>حالة المواصفات</th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+<footer>لا كاميرا ولا شاشة ولا ميكروفون ولا Raspberry Pi ولا Arduino ولا Servo (قائمتك تمنعها). الوجه ولوحة الصدر والذراعان والحلقات زخرفية بلا إلكترونيات. أحجام المحرك والبطارية والقطع الإلكترونية تمثيلية وليست قياسات تصنيع، وكل قيمة غير محددة TBD — VERIFY WITH DATASHEET.</footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const CP=[['ESP32 DevKit V1',1,'ESP32','حاوية الإلكترونيات في الصدر',1],['TB6612FNG',1,'TB6612','الحاوية بجانب ESP32',1],['محرك DC بعلبة تروس',2,'geared motor','القاعدة بجانب كل عجلة',0],['إنكودر العجلة',2,'encoder','خلف كل محرك',0],['عجلة الروبوت',2,'diameter = assumption','جانبا القاعدة',0],['عجلة كاستر',1,'Caster wheel','تحت القاعدة خلف المحور',0],['VL53L0X',1,'VL53L0X distance','أسفل الصدر الأمامي',1],['MPU6050',1,'MPU6050','على الشاسيه قرب المركز',1],['WS2812B',1,'WS2812B','مقدمة القاعدة خلف ناشر الضوء',1],['بازر',1,'Buzzer','داخل الصدر',0],['سبيكر',1,'Speaker','جانب الصدر',0],['بطارية Li-ion/LiPo',1,'Battery pack','الأسفل خلف محور العجلات',0],['BMS',1,'BMS','الحاوية',0],['فيوز + حامل',1,'fuse','الشاسيه في الخلف',0],['محوّل Buck',1,'buck','الحاوية',0],['توزيع الطاقة',1,'Power distribution','الحاوية',0],['مفتاح رئيسي',1,'power switch','ظهر الصدر',0],['زر الطوارئ',1,'Emergency stop','ظهر الصدر العلوي',0]];
+const cv=document.getElementById('c'),tip=document.getElementById('tip'),info=document.getElementById('info');
+const R_=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R_.setPixelRatio(Math.min(devicePixelRatio,2));
+const S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,1,2000);
+S.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,0.8);dl.position.set(150,300,200);S.add(dl);
+const G=new THREE.Group();S.add(G);const P=[];
+let D=24,cs=2;
+function mat(c,em,ds){return new THREE.MeshLambertMaterial({color:c,transparent:true,opacity:1,emissive:em||0,side:ds?THREE.DoubleSide:THREE.FrontSide})}
+function reg(m,n,g,x,y,z,e,em){m.position.set(x,y,z);m.userData={n:n,g:g,b:m.position.clone(),e:e||[0,0,0],em:em||0};G.add(m);P.push(m);return m}
+function box(n,g,w,h,d,x,y,z,c,e,em){return reg(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c,em)),n,g,x,y,z,e,em)}
+function cyl(n,g,r,h,x,y,z,c,e,rx,rz,em){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,32),mat(c,em));if(rz)m.rotation.z=Math.PI/2;if(rx)m.rotation.x=Math.PI/2;return reg(m,n,g,x,y,z,e,em)}
+function ell(n,g,sx,sy,sz,x,y,z,c,e,em){const m=new THREE.Mesh(new THREE.SphereGeometry(1,40,28),mat(c,em));m.scale.set(sx,sy,sz);return reg(m,n,g,x,y,z,e,em)}
+function tor(n,g,r,t,x,y,z,c,e,arc,ry,rzv,em){const m=new THREE.Mesh(new THREE.TorusGeometry(r,t,10,40,arc||Math.PI*2),mat(c,em));if(ry)m.rotation.y=ry;if(rzv)m.rotation.z=rzv;return reg(m,n,g,x,y,z,e,em)}
+function lathe(n,g,pts,c,e){const m=new THREE.Mesh(new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),48),mat(c,0,true));m.scale.z=0.8;return reg(m,n,g,0,0,0,e)}
+const WH=0xf1efe8,DK=0x1a1d24,OR=0xf58220,BL=0x2e90ff;
+let ruler=null;
+function build(){
+while(G.children.length)G.remove(G.children[0]);P.length=0;sel=null;if(ruler)S.remove(ruler);
+const ya=D/2,py=ya+5.5,u=cs,px=21;
+lathe('Lower body shell (3D printed)','shell',[[0,10],[11,10],[16,13],[17,20],[16,30],[13,36],[11,40]],WH,[0,0,0]);
+lathe('Upper torso shell (3D printed)','shell',[[0,40],[11,40],[12,48],[13.5,58],[14,64],[11,69],[5,72],[0,72.5]],WH,[0,10,0]);
+cyl('Neck cover','shell',4,6,0,73,0,DK,[0,16,0]);
+ell('Head shell','shell',16,12.5,14,0,86,0,WH,[0,24,0]);
+box('Head top cap','shell',8,1.6,6,0,99.2,0,OR,[0,24,0]);
+ell('Visor panel (cosmetic)','shell',12.5,9,3,0,86,11.3,0x0b0f1a,[0,24,0]);
+tor('Eye decal L (cosmetic, not a display)','shell',2.4,0.55,-5,87.5,14.1,BL,[0,24,0],Math.PI,0,0,0x1e6bd6);
+tor('Eye decal R (cosmetic, not a display)','shell',2.4,0.55,5,87.5,14.1,BL,[0,24,0],Math.PI,0,0,0x1e6bd6);
+tor('Smile decal (cosmetic)','shell',4,0.6,0,83.5,14.1,BL,[0,24,0],Math.PI,0,Math.PI,0x1e6bd6);
+[-1,1].forEach(s=>{const t=s<0?'L':'R';
+cyl('Headphone cup '+t+' (cosmetic)','shell',6.5,3,s*16.5,86,0,OR,[s*10,24,0],0,1);
+cyl('Headphone inner '+t,'shell',4.6,0.6,s*18.2,86,0,0x0b0f1a,[s*10,24,0],0,1);
+tor('Headphone ring '+t,'shell',5,0.5,s*18.6,86,0,BL,[s*10,24,0],0,Math.PI/2,0,0x1e6bd6);
+ell('Shoulder cap '+t,'shell',5,5,5,s*16.5,64,0,OR,[s*16,12,0]);
+cyl('Arm '+t+' (static, cosmetic)','shell',3.8,26,s*18,51,0,WH,[s*16,12,0]);
+cyl('Elbow band '+t,'shell',4.3,3,s*18,52,0,OR,[s*16,12,0]);
+cyl('Wrist band '+t,'shell',4.3,3,s*18,42,0,OR,[s*16,12,0]);
+ell('Hand '+t,'shell',3.8,3.8,3.8,s*18,37,0,WH,[s*16,12,0]);
+});
+box('Chest panel (cosmetic, no screen)','shell',15,12,1,0,58,10.9,0x0b0f1a,[0,10,0]);
+box('Light-pipe bar (cosmetic diffuser)','shell',1.4,14,0.6,0,22,13.5,BL,[0,0,8],0x1e6bd6);
+[-1,1].forEach(s=>{const t=s<0?'L':'R';
+cyl('Wheel '+t+' (diameter = assumption)','drive',ya,7,s*px,ya,0,0x15171c,[s*22,0,0],0,1);
+cyl('Wheel orange outer ring '+t,'drive',ya+0.8,1.6,s*(px+3),ya,0,OR,[s*22,0,0],0,1);
+tor('Wheel blue ring '+t+' (cosmetic)','drive',ya*0.62,0.5,s*(px+3.9),ya,0,BL,[s*22,0,0],0,Math.PI/2,0,0x1e6bd6);
+box('Motor bracket '+t,'drive',9,0.8,7,s*13,ya+3.9,0,0x5f5e5a,[0,-6,0]);
+box((t==='L'?'Left':'Right')+' DC geared motor (size TBD, placeholder)','drive',8,7,7,s*13,ya,0,0xba7517,[0,-12,0]);
+cyl('Motor shaft '+t,'drive',0.8,4,s*17.5,ya,0,0xb4b2a9,[s*10,0,0],0,1);
+box('Wheel encoder '+t+' (type TBD)','drive',2.5,5,3,s*8,ya,0,0x0f6e56,[0,-12,0]);
+});
+box('Support base plate','drive',26,3,22,0,5,0,0x2c2f36,[0,-14,0]);
+box('Chassis plate','drive',28,1,26,0,py,0,0x888780,[0,-4,0]);
+cyl('Caster mount','drive',0.8,3,0,6.5,-10,0x5f5e5a,[0,-14,-8]);
+reg(new THREE.Mesh(new THREE.SphereGeometry(2.5,24,18),mat(0xb4b2a9)),'Caster wheel','drive',0,2.5,-10,[0,-14,-8]);
+const ey=50,eh=12,y0=ey-eh/2+0.5+0.2*u;
+const enc=new THREE.Mesh(new THREE.BoxGeometry(18,eh,14),new THREE.MeshLambertMaterial({color:0x7f77dd,transparent:true,opacity:0.2,depthWrite:false}));
+reg(enc,'Electronics enclosure','elec',0,ey,-1,[0,16,0]);enc.userData.fix=0.2;
+enc.add(new THREE.LineSegments(new THREE.EdgesGeometry(enc.geometry),new THREE.LineBasicMaterial({color:0x534ab7})));
+box('ESP32 DevKit V1 (schematic block)','elec',5*u*0.8,0.4*u,2.8*u*0.8,-4,y0,1.5,0x534ab7,[0,16,0]);
+box('TB6612FNG motor driver (schematic block)','elec',2.5*u*0.8,0.4*u,2.5*u*0.8,4,y0,1.5,0x7f77dd,[0,18,0]);
+box('DC-DC buck converter (schematic block)','elec',2.5*u*0.8,0.8*u,2*u*0.8,4,y0,-4,0x3c3489,[0,20,0]);
+box('BMS (schematic block)','power',3*u*0.8,0.5*u,2*u*0.8,-4,y0,-4,0x534ab7,[8,16,0]);
+box('Power distribution (schematic block)','power',3*u*0.8,0.5*u,2*u*0.8,0,y0+4,-4,0x26215c,[-8,16,0]);
+box('Battery pack (size TBD, placeholder)','power',16,7,9,0,py+4,-6,0xef9f27,[0,-8,-18]);
+box('Main fuse + holder (schematic block)','power',2*u,1.2*u,3*u,-8,py+1.1*u,-9,0xba7517,[-8,-6,-14]);
+box('Main power switch (schematic block)','power',3*u*0.8,2,1.5,5,50,-9.9,0x854f0b,[8,10,-12]);
+cyl('Emergency stop (schematic)','power',2.2,1.4,0,58,-10.9,0xe24b4a,[0,12,-12],1);
+box('MPU6050 IMU (schematic block)','sens',2*u*0.8,0.3*u,1.6*u*0.8,0,py+1,6,0x1d9e75,[0,-4,10]);
+cyl('VL53L0X distance sensor (schematic)','sens',1.4,0.8,0,33,11.1,0x1d9e75,[0,0,16],1,0,0x0b6e50);
+tor('VL53L0X window ring','sens',1.9,0.2,0,33,11.5,BL,[0,0,16],0,0,0,0x1e6bd6);
+cyl('WS2812B LED (single, behind light-pipe)','inter',0.9,0.6,0,22,12.6,0xf09bff,[0,0,12],1,0,0x9b3db8);
+cyl('Speaker (schematic)','inter',2.2,1,6.5,46,7.6,0x2c2c2a,[10,0,12],1);
+cyl('Buzzer (schematic block)','inter',1*u*0.8,1.2*u*0.8,-7,y0+3,3,0x0f6e56,[0,18,0]);
+const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-36,0,0),new THREE.Vector3(-36,100,0),new THREE.Vector3(-41,0,0),new THREE.Vector3(-31,0,0),new THREE.Vector3(-41,100,0),new THREE.Vector3(-31,100,0)]);
+ruler=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xef9f27}));S.add(ruler);
+hl=null;hlKey=null;document.querySelectorAll('#tb tr').forEach(r=>r.classList.remove('on'));applyF();upd()}
+const gr=new THREE.GridHelper(220,22,0x888780,0x888780);gr.material.transparent=true;gr.material.opacity=0.25;S.add(gr);
+let th=0.5,ph=1.3,rad=250,tt=0.5,tp=1.3,tr=250,auto=false,drag=false,lx=0,ly=0,mvd=0,exv=0,flt='all',sel=null,ghost=false,hl=null,hlKey=null;
+const T=new THREE.Vector3(0,48,0);
+function upd(){cam.position.set(T.x+rad*Math.sin(ph)*Math.sin(th),T.y+rad*Math.cos(ph),T.z+rad*Math.sin(ph)*Math.cos(th));cam.lookAt(T)}
+function rs(){const w=cv.clientWidth,h=cv.clientHeight;R_.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+addEventListener('resize',rs);rs();
+const VW=[['منظور',0.5,1.3],['أمام',0,1.5],['خلف',Math.PI,1.5],['يسار',-Math.PI/2,1.5],['يمين',Math.PI/2,1.5],['علوي',0,0.02],['سفلي',0,3.1]];
+const vb=document.getElementById('views');
+VW.forEach((v,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=v[0];b.onclick=()=>{tt=v[1];tp=v[2];tr=250;document.querySelectorAll('#views .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on')};vb.appendChild(b)});
+const GN=[['all','الكل'],['shell','الغلاف'],['drive','الدفع والشاسيه'],['elec','الإلكترونيات'],['power','الطاقة'],['sens','الحساسات'],['inter','التفاعل']];
+const gb=document.getElementById('grp');
+GN.forEach((g,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=g[1];b.onclick=()=>{flt=g[0];hl=null;hlKey=null;clearRows();document.querySelectorAll('#grp .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyF()};gb.appendChild(b)});
+function applyF(){P.forEach(m=>{const u=m.userData;const on=hl?hl.includes(m):(flt==='all'||u.g===flt);let base=u.fix||1;if(u.g==='shell'&&ghost)base=0.1;m.material.opacity=on?base:(hl?0.12:0.05);m.material.depthWrite=m.material.opacity>0.5;m.material.emissive.setHex(hl&&hl.includes(m)?0x554400:u.em)})}
+function clearRows(){document.querySelectorAll('#tb tr').forEach(r=>r.classList.remove('on'))}
+const tb=document.getElementById('tb');
+CP.forEach(c=>{const r=document.createElement('tr');r.innerHTML='<td>'+c[0]+'</td><td>'+c[1]+'</td><td>'+c[3]+'</td><td class="'+(c[4]?'g':'t')+'">'+(c[4]?'النوع مؤكد':'TBD — VERIFY WITH DATASHEET')+'</td>';
+r.onclick=()=>{if(hlKey===c[2]){hl=null;hlKey=null;clearRows();applyF();return}
+hl=P.filter(m=>m.userData.n.toLowerCase().includes(c[2].toLowerCase()));hlKey=c[2];clearRows();r.classList.add('on');
+if(hl.some(m=>m.userData.g!=='shell')){ghost=true;const b=document.getElementById('b1');b.classList.add('on');b.textContent='غلاف عادي'}
+info.innerHTML='<b>'+c[0]+'</b> ×'+c[1]+'<br>'+c[3];applyF();document.getElementById('viewer').scrollIntoView({behavior:'smooth',block:'center'})};tb.appendChild(r)});
+[['sD','vD',v=>D=v],['sC','vC',v=>cs=v]].forEach(a=>{const s=document.getElementById(a[0]);s.oninput=()=>{document.getElementById(a[1]).textContent=s.value;a[2](+s.value);build()}});
+document.getElementById('ex').oninput=function(){exv=this.value/100};
+cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;mvd=0;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
+cv.addEventListener('pointerup',e=>{drag=false;cv.style.cursor='grab';if(mvd<4)selectAt(e)});
+const rcst=new THREE.Raycaster(),m2=new THREE.Vector2();
+function hit(e){const r=cv.getBoundingClientRect();m2.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);rcst.setFromCamera(m2,cam);return rcst.intersectObjects(P.filter(p=>p.visible&&p.material.opacity>0.5),false)[0]}
+function selectAt(e){const h=hit(e);if(sel&&!(hl&&hl.includes(sel)))sel.material.emissive.setHex(sel.userData.em);if(h){sel=h.object;sel.material.emissive.setHex(0x554400);const g=sel.userData.g;info.innerHTML='<b>'+sel.userData.n+'</b><br>'+(g==='shell'?'قطعة شكلية، ليست مكوّناً إلكترونياً':'الأبعاد والمواصفات الحقيقية: TBD — VERIFY WITH DATASHEET')}else{sel=null;info.textContent='اضغط على أي قطعة'}}
+cv.addEventListener('pointermove',e=>{
+if(drag){const dx=e.clientX-lx,dy=e.clientY-ly;mvd+=Math.abs(dx)+Math.abs(dy);th-=dx*0.008;ph=Math.min(3.1,Math.max(0.02,ph-dy*0.008));tt=th;tp=ph;lx=e.clientX;ly=e.clientY;upd();return}
+const h=hit(e);if(h){tip.textContent=h.object.userData.n;tip.style.display='block'}else tip.style.display='none'});
+cv.addEventListener('wheel',e=>{e.preventDefault();rad=Math.min(450,Math.max(90,rad+e.deltaY*0.3));tr=rad;upd()},{passive:false});
+let pd=0;cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pd){rad=Math.min(450,Math.max(90,rad-(d-pd)*0.8));tr=rad;upd()}pd=d}},{passive:true});
+cv.addEventListener('touchend',()=>{pd=0});
+document.getElementById('b1').onclick=function(){ghost=!ghost;this.classList.toggle('on',ghost);this.textContent=ghost?'غلاف عادي':'غلاف شفاف';applyF()};
+document.getElementById('b2').onclick=function(){auto=!auto;this.classList.toggle('on',auto);this.textContent=auto?'إيقاف الدوران':'دوران تلقائي'};
+build();
+(function loop(){requestAnimationFrame(loop);
+if(auto&&!drag){th+=0.006;tt=th}else if(!drag){th+=(tt-th)*0.12;ph+=(tp-ph)*0.12;rad+=(tr-rad)*0.12}
+upd();
+P.forEach(m=>{const b=m.userData.b,e=m.userData.e;m.position.set(b.x+e[0]*exv,b.y+e[1]*exv,b.z+e[2]*exv)});
+R_.render(S,cam)})();
+</script>
+</body>
+</html>
