@@ -3,70 +3,119 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Educational Robot: 3D Model with Components</title>
+<title>Educational Smart Robot V1 — 3D + Drive Simulation</title>
 <style>
-:root{--bg:#faf9f5;--fg:#1f1e1d;--mut:#6b6a66;--card:#fff;--line:#e3e1d8;--ac:#d9731a;--acbg:rgba(217,115,26,.14);--ok:#0f6e56;--warn:#a8541a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b19;--fg:#ecebe6;--mut:#a3a199;--card:#262522;--line:#3a3935;--ac:#f09a45;--acbg:rgba(240,154,69,.18);--ok:#4cc3a0;--warn:#e8985a}}
-:root[data-theme="dark"]{--bg:#1c1b19;--fg:#ecebe6;--mut:#a3a199;--card:#262522;--line:#3a3935;--ac:#f09a45;--acbg:rgba(240,154,69,.18);--ok:#4cc3a0;--warn:#e8985a}
+:root{--bg:#faf9f5;--fg:#1f1e1d;--mut:#6b6a66;--card:#fff;--line:#e3e1d8;--ac:#d9731a;--acbg:rgba(217,115,26,.14);--ok:#0f6e56;--warn:#a8541a;--bad:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b19;--fg:#ecebe6;--mut:#a3a199;--card:#262522;--line:#3a3935;--ac:#f09a45;--acbg:rgba(240,154,69,.18);--ok:#4cc3a0;--warn:#e8985a;--bad:#f2857d}}
+:root[data-theme="dark"]{--bg:#1c1b19;--fg:#ecebe6;--mut:#a3a199;--card:#262522;--line:#3a3935;--ac:#f09a45;--acbg:rgba(240,154,69,.18);--ok:#4cc3a0;--warn:#e8985a;--bad:#f2857d}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif}
-main{max-width:1000px;margin:0 auto;padding:22px 14px 50px}
-h1{font-size:23px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 10px;padding-bottom:5px;border-bottom:2px solid var(--ac)}
-.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+main{max-width:1040px;margin:0 auto;padding:20px 14px 50px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+h1{font-size:22px;margin:0 0 2px}h2{font-size:18px;margin:26px 0 10px;padding-bottom:5px;border-bottom:2px solid var(--ac)}
+.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
 .wrap{display:flex;flex-wrap:wrap;gap:12px}
-#viewer{position:relative;flex:1 1 440px;height:560px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+#viewer{position:relative;flex:1 1 460px;height:580px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
 canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
-#tip{position:absolute;left:10px;top:10px;padding:3px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:13px;display:none}
-.rl{position:absolute;right:10px;top:10px;padding:3px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:12px}
-.side{flex:1 1 200px;font-size:13px}
-.pn{font-size:12px;color:var(--mut);margin:10px 0 4px}.pn:first-child{margin-top:0}
-.sl{display:flex;justify-content:space-between;font-size:12px;margin-top:8px}
+#tip{position:absolute;left:10px;top:10px;padding:3px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:13px;display:none;direction:ltr}
+#hud{position:absolute;left:10px;bottom:10px;padding:8px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:12px;line-height:1.6;direction:ltr;text-align:left;opacity:.96;max-width:62%}
+#hud b{font-size:20px;color:var(--ac)}#hud .l{color:var(--mut)}
+#dp{position:absolute;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:5px;direction:ltr}
+#dp button{font-size:18px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;touch-action:none;user-select:none}
+#dp button:active{background:var(--acbg);border-color:var(--ac)}
+.side{flex:1 1 210px;font-size:13px}.pn{font-size:12px;color:var(--mut);margin:10px 0 4px}.pn:first-child{margin-top:0}
+.sl{display:flex;justify-content:space-between;font-size:12px;margin-top:6px}
 .bt{font:inherit;font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
-.bt.on{background:var(--acbg);border-color:var(--ac);color:var(--ac)}
+.bt.on{background:var(--acbg);border-color:var(--ac);color:var(--ac)}.bt.es{border-color:var(--bad);color:var(--bad);font-weight:700}.bt.es.on{background:var(--bad);color:#fff}
 .row{display:flex;flex-wrap:wrap;gap:6px}input[type=range]{width:100%}
 #info{padding:8px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);line-height:1.6}
 .tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
-th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}th{background:var(--acbg)}tr:last-child td{border-bottom:0}
-tbody tr{cursor:pointer}tbody tr:hover{background:var(--acbg)}tbody tr.on{background:var(--acbg);outline:2px solid var(--ac);outline-offset:-2px}
-.g{color:var(--ok);font-weight:600}.t{color:var(--warn);font-weight:600}
-footer{margin-top:26px;color:var(--mut);font-size:12.5px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+th,td{padding:7px 10px;text-align:start;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--acbg)}tr:last-child td{border-bottom:0}
+tbody tr.k{cursor:pointer}tbody tr.k:hover,tbody tr.on{background:var(--acbg)}tbody tr.on{outline:2px solid var(--ac);outline-offset:-2px}
+.s{color:var(--ok);font-weight:600}.p,.t,.a{color:var(--warn);font-weight:600}.a{color:#2e7dd6}
+ul{margin:0;padding-inline-start:20px}li{margin:5px 0}footer{margin-top:24px;color:var(--mut);font-size:12.5px}
 </style>
 </head>
 <body>
 <main>
-<h1>Educational Robot: 3D Model</h1>
-<p class="sub">Height 100 cm (from the design image) · Drag to rotate · Mouse wheel or two fingers to zoom · Click any part or any table row</p>
+<div class="top"><div><h1 data-i="h1"></h1><p class="sub" data-i="sub"></p></div><button class="bt" id="lg">العربية</button></div>
 <div class="wrap">
-<div id="viewer"><canvas id="c"></canvas><div id="tip"></div><div class="rl"><span style="color:#ef9f27">┃</span> Yellow line = 100 cm</div></div>
+<div id="viewer"><canvas id="c"></canvas><div id="tip"></div><div id="hud"></div>
+<div id="dp"><span></span><button id="bu">▲</button><span></span><button id="bl">◀</button><button id="bs">■</button><button id="br">▶</button><span></span><button id="bd">▼</button><span></span></div></div>
 <div class="side">
-<div class="pn">Dimensions (cm)</div>
-<div class="sl"><span>Height (from image)</span><b>100 fixed</b></div>
-<div class="sl"><span>Wheel diameter (assumed)</span><b id="vD">24</b></div><input type="range" id="sD" min="20" max="32" value="24">
-<div class="sl"><span>Internal parts scale</span><b id="vC">2</b></div><input type="range" id="sC" min="1" max="3" step="0.5" value="2">
-<div class="pn">View angle</div><div id="views" class="row"></div>
-<div class="pn">Exploded view</div><input type="range" id="ex" min="0" max="100" value="0">
-<div class="pn">Show group</div><div id="grp" class="row"></div>
-<div class="pn">Options</div><div class="row"><button class="bt" id="b1">Ghost shell</button><button class="bt" id="b2">Auto-rotate</button></div>
-<div class="pn">Selected part</div><div id="info">Click any part</div>
+<div class="pn" data-i="hdr"></div>
+<div class="sl"><span data-i="volt"></span><b id="vV">11.1 V</b></div><input type="range" id="sV" min="9" max="12.6" step="0.1" value="11.1">
+<div class="sl"><span data-i="pwm"></span><b id="vP">80%</b></div><input type="range" id="sP" min="10" max="100" step="5" value="80">
+<div class="row" style="margin-top:8px"><button class="bt on" id="fl"></button><button class="bt" id="rs"></button><button class="bt es" id="es"></button></div>
+<div class="pn" data-i="hc"></div><div class="row"><button class="bt on" id="c2b"></button></div>
+<div class="sl"><span data-i="scl"></span><b id="vC">2</b></div><input type="range" id="sC" min="1" max="3" step="0.5" value="2">
+<div class="pn" data-i="hv"></div><div id="views" class="row"></div>
+<div class="pn" data-i="hx"></div><input type="range" id="ex" min="0" max="100" value="0">
+<div class="pn" data-i="hg"></div><div id="grp" class="row"></div>
+<div class="pn" data-i="ho"></div><div class="row"><button class="bt" id="b1"></button><button class="bt" id="b2"></button></div>
+<div class="pn" data-i="hs"></div><div id="info"></div>
 </div></div>
-
-<h2>Components used</h2>
-<p class="sub">Click any row to highlight the part inside the robot (the shell turns transparent automatically). Click again to clear.</p>
-<div class="tw"><table>
-<thead><tr><th>Component</th><th>Qty</th><th>Location</th><th>Spec status</th></tr></thead>
-<tbody id="tb"></tbody></table></div>
-<footer>No camera, screen, microphone, Raspberry Pi, Arduino or servo (excluded by the approved hardware list). The face, chest panel, arms and rings are cosmetic with no electronics. Motor, battery and electronics sizes are schematic placeholders, not manufacturing dimensions. Every unspecified value is TBD — VERIFY WITH DATASHEET.</footer>
+<h2 data-i="h2"></h2><p class="sub" data-i="h2s"></p>
+<div class="tw"><table><thead><tr><th data-i="th1"></th><th data-i="th2"></th><th data-i="th3"></th><th data-i="th4"></th><th data-i="th5"></th></tr></thead><tbody id="tb"></tbody></table></div>
+<h2 data-i="h3"></h2><ul id="nt"></ul>
+<footer data-i="ft"></footer>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const CP=[['ESP32 DevKit V1',1,'ESP32','Electronics enclosure in the chest',1],['TB6612FNG motor driver',1,'TB6612','Enclosure, next to ESP32',1],['DC geared motor',2,'geared motor','Base, beside each wheel',0],['Wheel encoder',2,'encoder','Behind each motor',0],['Robot wheel',2,'diameter = assumption','Left and right of the base',0],['Caster wheel',1,'Caster wheel','Under the support base, behind the axle',0],['VL53L0X distance sensor',1,'VL53L0X distance','Lower front of the torso',1],['MPU6050 IMU',1,'MPU6050','On the chassis near the center',1],['WS2812B LED',1,'WS2812B','Front of the base, behind the light-pipe',1],['Buzzer',1,'Buzzer','Inside the chest',0],['Speaker',1,'Speaker','Side of the chest',0],['Li-ion/LiPo battery pack',1,'Battery pack','Low, behind the wheel axle',0],['BMS',1,'BMS','Enclosure',0],['Fuse + fuse holder',1,'fuse','Chassis, rear',0],['DC-DC buck converter',1,'buck','Enclosure',0],['Power distribution',1,'Power distribution','Enclosure',0],['Main power switch',1,'power switch','Back of the chest',0],['Emergency stop',1,'Emergency stop','Upper back of the chest',0]];
-const cv=document.getElementById('c'),tip=document.getElementById('tip'),info=document.getElementById('info');
+let L='en';
+const T={
+h1:['روبوت تعليمي ذكي V1: نموذج ثلاثي الأبعاد + محاكاة القيادة','Educational Smart Robot V1: 3D Model + Drive Simulation'],
+sub:['قُد الروبوت بالأسهم أو WASD أو أزرار الشاشة · Space للإيقاف · اسحب الرسم للتدوير · عجلة الماوس للتكبير','Drive with arrow keys / WASD or the on-screen pad · Space to stop · Drag to rotate · Wheel to zoom'],
+hdr:['القيادة والمحاكاة','Drive & simulation'],volt:['جهد البطارية (9 – 12.6V)','Battery voltage (9 – 12.6 V)'],pwm:['حدّ PWM','PWM limit'],
+fl:['الكاميرا تتبع','Follow camera'],rs:['إعادة الضبط','Reset'],es:['زر الطوارئ','E-STOP'],esr:['تحرير الطوارئ','Release E-STOP'],
+hc:['الكاسترات','Casters'],scl:['تكبير القطع الصغيرة','Small parts scale'],hv:['زاوية العرض','View'],hx:['عرض مفكّك','Exploded view'],hg:['إظهار قسم','Show group'],ho:['خيارات','Options'],hs:['القطعة المحددة','Selected part'],
+h2:['المكوّنات المستخدمة','Components used'],h2s:['اضغط على أي صف ليُضاء مكان القطعة داخل الروبوت. اضغط ثانية لإلغاء التحديد.','Click a row to highlight the part inside the robot. Click again to clear.'],
+th1:['المكوّن','Component'],th2:['العدد','Qty'],th3:['الموقع','Location'],th4:['المواصفات','Specification'],th5:['الحالة','Status'],
+h3:['ملاحظات هندسية','Engineering notes'],
+ft:['المحاكاة حركية فقط (سرعة العجلات من مواصفات المحرك في README تتناسب مع جهد البطارية)، ولا تحاكي الحِمل أو الانزلاق أو المنحدرات. الأحجام التمثيلية ليست قياسات تصنيع، وقيمها الحقيقية TBD — VERIFY WITH DATASHEET. الوجه والذراعان والحلقات والغلاف زخرفية بلا إلكترونيات.','Kinematic simulation only (wheel speed from the README motor spec, scaled with battery voltage); it does not model load, slip or ramps. Schematic sizes are placeholders, real values are TBD — VERIFY WITH DATASHEET. Face, arms, rings and shell are cosmetic with no electronics.'],
+click:['اضغط على أي قطعة','Click any part'],shape:['قطعة شكلية، ليست مكوّناً إلكترونياً','Shape-only part, not an electronic component'],real:['الأبعاد الحقيقية: TBD — VERIFY WITH DATASHEET','Real dimensions: TBD — VERIFY WITH DATASHEET'],
+ghost:['غلاف شفاف','Ghost shell'],solid:['غلاف عادي','Solid shell'],auto:['دوران تلقائي','Auto-rotate'],stop:['إيقاف الدوران','Stop rotation'],c1l:['كاستر واحد','1 caster'],c2l:['كاستران (أمام + خلف)','2 casters (front + rear)'],
+s:['محدد في README','Specified (README)'],p:['بانتظار القرار','Pending'],t:['TBD','TBD'],a:['مضاف بالمراجعة','Added by review'],
+hSpd:['السرعة','Speed'],hRpm:['دوران العجلتين L / R','Wheel RPM L / R'],hDist:['المسافة','Distance'],hHead:['الاتجاه','Heading'],hEnc:['عدّات الإنكودر L / R','Encoder counts L / R'],hMax:['أقصى سرعة نظرية','Theoretical max'],hES:['الطوارئ مفعّلة: المحركان مفصولان','E-STOP engaged: motors cut']};
+const VW=[['منظور','Iso',0.5,1.3],['أمام','Front',0,1.5],['خلف','Back',Math.PI,1.5],['يسار','Left',Math.PI/2,1.5],['يمين','Right',-Math.PI/2,1.5],['علوي','Top',0,0.02],['سفلي','Bottom',0,3.1]];
+const GN=[['all','الكل','All'],['shell','الغلاف','Shell'],['drive','الدفع والشاسيه','Drive & chassis'],['elec','الإلكترونيات','Electronics'],['power','الطاقة','Power'],['inter','الصوت والإضاءة','Audio & LEDs']];
+const CP=[
+['HP Elite',1,['HP Elite x2','HP Elite x2'],['مقدمة الصدر على حامل','Chest front, in cradle'],['حاسوب لمسي (واجهة، ألعاب، لوحة تحكم)؛ ≈830 غ حسب كلامك؛ أبعاده TBD','Touchscreen computer (UI, games, dashboard); ≈830 g per your note; size TBD'],'s'],
+['ESP32',1,['ESP32','ESP32'],['حاوية الإلكترونيات','Electronics enclosure'],['متحكم منخفض المستوى: PWM/DIR، الإنكودر، LED، الصوت، الاتصال، watchdog','Low-level controller: PWM/DIR, encoders, LEDs, audio, comms, watchdog'],'s'],
+['MDD20A',1,['Cytron MDD20A','Cytron MDD20A'],['لوح الشاسيه، أمام يسار','Chassis plate, front-left'],['قناتان، 6–30V، 20A مستمر لكل قناة، منطق 1.8–12V، PWM حتى 20kHz','2 ch, 6–30 V, 20 A continuous/ch, 1.8–12 V logic, PWM up to 20 kHz'],'s'],
+['GB37Y3530',2,['محرك GB37Y3530-12V-90EN','GB37Y3530-12V-90EN motor'],['بجانب كل عجلة','Beside each wheel'],['12V، ≈90:1، 122 RPM ±10%، توقف ≈7A و38 كغ·سم، عمود 6 مم D، 205 غ؛ أبعاد الجسم TBD','12 V, ≈90:1, 122 RPM ±10%, stall ≈7 A / 38 kg·cm, 6 mm D-shaft, 205 g; body size TBD'],'s'],
+['encoder',2,['إنكودر Hall رباعي','Hall quadrature encoder'],['خلف كل محرك','Behind each motor'],['16 عدّة/لفة محرك = 1440 للعمود (يختلف بين البائعين: قِس بنفسك)؛ يعمل بـ5V','16 counts/motor rev = 1440 at output (vendors differ: measure it); runs at 5 V'],'s'],
+['level shifter',1,['مبدّل مستوى للإنكودر (4 قنوات)','Encoder level shifter (4-ch)'],['حاوية الإلكترونيات','Electronics enclosure'],['5V ← 3.3V لأطراف ESP32 (لا تتحمل 5V)','5 V → 3.3 V for ESP32 pins (not 5 V tolerant)'],'a'],
+['Ø150',2,['عجلة Ø150 مم','Ø150 mm wheel'],['جانبا القاعدة','Left and right of the base'],['القطر 150 مم؛ العرض ووصلة عمود 6 مم D TBD؛ يُنصح بمحمل خارجي','Diameter 150 mm; width and 6 mm D-hub TBD; outboard bearing advised'],'s'],
+['Caster ball',1.5,['كاستر','Caster'],['تحت قاعدة الدعم','Under the support plate'],['1–2 حسب README (زر الكاسترات)','1–2 per README (casters button)'],'p'],
+['Battery',1,['بطارية 3S Li-ion','3S Li-ion battery'],['لوح الشاسيه، خلف المحور','Chassis plate, behind the axle'],['11.1V اسمي / 12.6V ممتلئة، 15Ah، ≈166.5Wh؛ الأبعاد TBD','11.1 V nominal / 12.6 V full, 15 Ah, ≈166.5 Wh; size TBD'],'s'],
+['BMS',1,['BMS 3S 30A','3S 30A BMS'],['لوح الشاسيه، أمام يمين','Chassis plate, front-right'],['حماية + موازنة الخلايا؛ اتبع مخطط الشركة المصنعة','Protection + balancing; follow manufacturer wiring'],'s'],
+['Fuse',1,['فيوز 25A DC + حامل','25 A DC fuse + holder'],['لوح الشاسيه، يسار البطارية','Chassis plate, left of battery'],['25A حسب README؛ الهامش ضيق أمام ذروة 22.6A، اختر القيمة بعد قياس التيار','25 A per README; tight vs 22.6 A peak, finalize after measuring current'],'s'],
+['Emergency stop',1,['زر طوارئ فطري','Mushroom E-stop'],['أعلى ظهر الصدر','Upper back of the chest'],['يقطع طاقة المحركات بين الفيوز والمفتاح؛ يُنقل من "مستقبلاً" إلى V1؛ القيمة TBD','Cuts motor power between fuse and switch; moved from "future" to V1; rating TBD'],'a'],
+['Main switch',1,['مفتاح رئيسي ≥30A DC','Main switch ≥30 A DC'],['ظهر القاعدة','Back of the base'],['تأكد من تقنينه لتيار مستمر DC','Confirm its DC rating'],'s'],
+['Bulk capacitor',1,['مكثف كبير قرب المشغّل','Bulk capacitor near driver'],['لوح الشاسيه قرب MDD20A','Chassis plate near MDD20A'],['يمتص قفزات المحركات؛ القيمة والجهد TBD','Absorbs motor transients; value/voltage TBD'],'a'],
+['5V buck',1,['محوّل Buck 5V/5A','5 V / 5 A buck converter'],['حاوية الإلكترونيات','Electronics enclosure'],['يغذي ESP32 والصوت والـ LED','Powers ESP32, audio, LEDs'],'s'],
+['PD converter',1,['محوّل USB-C PD','USB-C PD converter'],['حاوية الإلكترونيات','Electronics enclosure'],['يجب أن يكون مصدر PD من دخل 9–12.6V؛ هدف ≥65W (شاحن HP لعائلة Elite x2 45W)؛ الموديل معلّق','Must be a PD source from 9–12.6 V input; ≥65 W target (HP Elite x2 family adapter is 45 W); model pending'],'p'],
+['Power distribution',1,['توزيع الطاقة','Power distribution'],['لوح الشاسيه، يمين البطارية','Chassis plate, right of battery'],['بعد المفتاح الرئيسي: MDD20A و5V Buck و PD','After main switch: MDD20A, 5 V buck, PD'],'s'],
+['Charging port',1,['منفذ شحن ≥5A','Charging port ≥5 A'],['ظهر القاعدة','Back of the base'],['منفذ خارجي؛ الشاحن 12.6V/5A CC/CV خارجي؛ لا قيادة أثناء الشحن','External port; 12.6 V / 5 A CC/CV charger is external; no driving while charging'],'s'],
+['Audio amplifier',1,['مكبّر صوت','Audio amplifier'],['حاوية الإلكترونيات','Electronics enclosure'],['يلزم لتشغيل السبيكر من ESP32 (أو استخدم صوت HP فتُحذف السبيكر)','Needed to drive the speaker from ESP32 (or use HP audio and drop the speaker)'],'a'],
+['Speaker',1,['سبيكر','Speaker'],['أسفل الصدر، يسار','Lower chest, left'],['الموديل والمعاوقة والقدرة TBD','Model, impedance, power TBD'],'t'],
+['LED (',3,['LED حالة (عدة)','Status LEDs (several)'],['أسفل الصدر','Lower chest'],['حالة / خطأ / نشاط','Status / error / activity'],'t'],
+['',0,['حماية عكس القطبية + watchdog (برمجي)','Reverse-polarity protection + link-loss watchdog (firmware)'],['على مسار الطاقة / ESP32','On power path / ESP32'],['غير مرسومة؛ مقترحة بالمراجعة، القيم TBD','Not modeled; recommended by review, values TBD'],'a'],
+['',0,['موصلات وأسلاك','Connectors & wiring'],['أنحاء الروبوت','Throughout'],['XT60 رئيسي، XT30 للمحركات، JST للإشارات؛ أسلاك 12/14/18/20–24 AWG','XT60 main, XT30 motors, JST signals; 12/14/18/20–24 AWG'],'s']];
+const NT=[
+['عناصر "مضاف بالمراجعة" (زر الطوارئ، مكبّر الصوت، مبدّل مستوى الإنكودر، المكثف الكبير) تمثيلية وقيمها TBD. حماية عكس القطبية وwatchdog غير مرسومين.','Items tagged "Added by review" (E-stop, audio amplifier, encoder level shifter, bulk capacitor) are placeholders with TBD values. Reverse-polarity protection and the watchdog are not drawn.'],
+['المحاكاة: السرعة القصوى = 122 RPM × (جهد البطارية ÷ 12) على عجلة Ø150 مم (≈0.96 م/ث عند 12V). المسافة بين العجلتين 40 سم افتراض من النموذج. لا حِمل ولا انزلاق ولا منحدرات.','Simulation: max speed = 122 RPM × (battery V ÷ 12) on a Ø150 mm wheel (≈0.96 m/s at 12 V). The 40 cm wheel track is an assumption from the model. No load, slip or ramps.'],
+['الاتزان: جسم طويل وجهاز لوحي مرتفع. بكاستر واحد يقع الدعم خلف المحور فقط؛ كاستران يعطيان نقطة دعم أمامية، لكن يلزم أرضية مستوية أو كاستر بنابض حتى لا تفقد عجلة الدفع جرّها.','Stability: tall body, high tablet. With one caster support lies only behind the axle; two casters add a front support point, but need a flat floor or a spring caster so a drive wheel does not lose traction.'],
+['الفيوز 25A بهامش ضيق مقابل ذروة 22.6A. قِس التيار الحقيقي ثم اختر القيمة.','25 A fuse has a tight margin against the 22.6 A peak. Measure real current, then choose the rating.'],
+['ما زال ناقصاً: حساسات مسافة/ميل، وقياس جهد البطارية. ملف README لا يذكرها.','Still missing: distance/tilt sensors and battery-voltage sensing. The README does not list them.'],
+['V1 لا يعمل أثناء الشحن؛ يُفضّل تطبيقه بقاطع في الأجهزة.','V1 must not run while charging; best enforced by a hardware interlock.']];
+const cv=document.getElementById('c'),tip=document.getElementById('tip'),info=document.getElementById('info'),hudEl=document.getElementById('hud');
 const R_=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R_.setPixelRatio(Math.min(devicePixelRatio,2));
-const S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,1,2000);
+const S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,1,3000);
 S.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,0.8);dl.position.set(150,300,200);S.add(dl);
-const G=new THREE.Group();S.add(G);const P=[];
-let D=24,cs=2;
+const Rb=new THREE.Group();S.add(Rb);const G=new THREE.Group();Rb.add(G);const P=[],WHL=[];let cs=2,casters=2;
 function mat(c,em,ds){return new THREE.MeshLambertMaterial({color:c,transparent:true,opacity:1,emissive:em||0,side:ds?THREE.DoubleSide:THREE.FrontSide})}
 function reg(m,n,g,x,y,z,e,em){m.position.set(x,y,z);m.userData={n:n,g:g,b:m.position.clone(),e:e||[0,0,0],em:em||0};G.add(m);P.push(m);return m}
 function box(n,g,w,h,d,x,y,z,c,e,em){return reg(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c,em)),n,g,x,y,z,e,em)}
@@ -74,108 +123,150 @@ function cyl(n,g,r,h,x,y,z,c,e,rx,rz,em){const m=new THREE.Mesh(new THREE.Cylind
 function ell(n,g,sx,sy,sz,x,y,z,c,e,em){const m=new THREE.Mesh(new THREE.SphereGeometry(1,40,28),mat(c,em));m.scale.set(sx,sy,sz);return reg(m,n,g,x,y,z,e,em)}
 function tor(n,g,r,t,x,y,z,c,e,arc,ry,rzv,em){const m=new THREE.Mesh(new THREE.TorusGeometry(r,t,10,40,arc||Math.PI*2),mat(c,em));if(ry)m.rotation.y=ry;if(rzv)m.rotation.z=rzv;return reg(m,n,g,x,y,z,e,em)}
 function lathe(n,g,pts,c,e){const m=new THREE.Mesh(new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),48),mat(c,0,true));m.scale.z=0.8;return reg(m,n,g,0,0,0,e)}
-const WH=0xf1efe8,DK=0x1a1d24,OR=0xf58220,BL=0x2e90ff;
-let ruler=null;
+const WH=0xf1efe8,OR=0xf58220,BL=0x2e90ff;let ruler=null,sel=null,hl=null,hlKey=null,ghost=false,flt='all',exv=0;
 function build(){
-while(G.children.length)G.remove(G.children[0]);P.length=0;sel=null;if(ruler)S.remove(ruler);
-const ya=D/2,py=ya+5.5,u=cs,px=21;
-lathe('Lower body shell (3D printed)','shell',[[0,10],[11,10],[16,13],[17,20],[16,30],[13,36],[11,40]],WH,[0,0,0]);
-lathe('Upper torso shell (3D printed)','shell',[[0,40],[11,40],[12,48],[13.5,58],[14,64],[11,69],[5,72],[0,72.5]],WH,[0,10,0]);
-cyl('Neck cover','shell',4,6,0,73,0,DK,[0,16,0]);
+while(G.children.length)G.remove(G.children[0]);P.length=0;WHL.length=0;sel=null;hl=null;hlKey=null;if(ruler)Rb.remove(ruler);
+const R=7.5,ww=5,px=20,ya=7.5,py=12,u=cs;
+lathe('Lower body shell (3D printed)','shell',[[0,6],[12,6],[16,10],[17,18],[16.5,28],[14,35],[12,40]],WH,[0,0,0]);
+lathe('Upper torso shell (3D printed)','shell',[[0,40],[14,40],[15.5,48],[17.5,58],[18,64],[14,69],[6,72],[0,72.5]],WH,[0,10,0]);
+cyl('Neck cover','shell',4.5,6,0,73,0,0x1a1d24,[0,16,0]);
 ell('Head shell','shell',16,12.5,14,0,86,0,WH,[0,24,0]);
 box('Head top cap','shell',8,1.6,6,0,99.2,0,OR,[0,24,0]);
 ell('Visor panel (cosmetic)','shell',12.5,9,3,0,86,11.3,0x0b0f1a,[0,24,0]);
-tor('Eye decal L (cosmetic, not a display)','shell',2.4,0.55,-5,87.5,14.1,BL,[0,24,0],Math.PI,0,0,0x1e6bd6);
-tor('Eye decal R (cosmetic, not a display)','shell',2.4,0.55,5,87.5,14.1,BL,[0,24,0],Math.PI,0,0,0x1e6bd6);
+tor('Eye decal L (cosmetic)','shell',2.4,0.55,5,87.5,14.1,BL,[0,24,0],Math.PI,0,0,0x1e6bd6);
+tor('Eye decal R (cosmetic)','shell',2.4,0.55,-5,87.5,14.1,BL,[0,24,0],Math.PI,0,0,0x1e6bd6);
 tor('Smile decal (cosmetic)','shell',4,0.6,0,83.5,14.1,BL,[0,24,0],Math.PI,0,Math.PI,0x1e6bd6);
-[-1,1].forEach(s=>{const t=s<0?'L':'R';
+[-1,1].forEach(s=>{const t=s>0?'L':'R';
 cyl('Headphone cup '+t+' (cosmetic)','shell',6.5,3,s*16.5,86,0,OR,[s*10,24,0],0,1);
-cyl('Headphone inner '+t,'shell',4.6,0.6,s*18.2,86,0,0x0b0f1a,[s*10,24,0],0,1);
 tor('Headphone ring '+t,'shell',5,0.5,s*18.6,86,0,BL,[s*10,24,0],0,Math.PI/2,0,0x1e6bd6);
-ell('Shoulder cap '+t,'shell',5,5,5,s*16.5,64,0,OR,[s*16,12,0]);
-cyl('Arm '+t+' (static, cosmetic)','shell',3.8,26,s*18,51,0,WH,[s*16,12,0]);
-cyl('Elbow band '+t,'shell',4.3,3,s*18,52,0,OR,[s*16,12,0]);
-cyl('Wrist band '+t,'shell',4.3,3,s*18,42,0,OR,[s*16,12,0]);
-ell('Hand '+t,'shell',3.8,3.8,3.8,s*18,37,0,WH,[s*16,12,0]);
+ell('Shoulder cap '+t,'shell',5.2,5.2,5.2,s*20.5,64,0,OR,[s*16,12,0]);
+cyl('Arm '+t+' (static, cosmetic)','shell',3.8,26,s*22.5,51,0,WH,[s*16,12,0]);
+cyl('Elbow band '+t,'shell',4.3,3,s*22.5,52,0,OR,[s*16,12,0]);
+cyl('Wrist band '+t,'shell',4.3,3,s*22.5,42,0,OR,[s*16,12,0]);
+ell('Hand '+t,'shell',3.8,3.8,3.8,s*22.5,37,0,WH,[s*16,12,0]);
+const tire=cyl('Wheel '+t+' (Ø150 mm)','drive',R,ww,s*px,ya,0,0x15171c,[s*22,0,0],0,1);tire.userData.side=t;WHL.push(tire);
+[1,-1].forEach(f=>{const mk=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.3,1.2),new THREE.MeshLambertMaterial({color:OR}));mk.position.set(R-1.6,f*(ww/2+0.05),0);tire.add(mk)});
+cyl('Wheel orange ring '+t,'drive',R+0.5,1,s*(px+ww/2),ya,0,OR,[s*22,0,0],0,1);
+cyl('Wheel hub '+t,'drive',3,ww+0.2,s*px,ya,0,0xb4b2a9,[s*22,0,0],0,1);
+cyl(t+' GB37Y3530 motor (size TBD, placeholder)','drive',1.85,9,s*12.5,ya,0,0xba7517,[0,-6,0],0,1);
+cyl('Motor shaft '+t+' (6 mm D)','drive',0.3,3,s*18.5,ya,0,0xb4b2a9,[s*10,0,0],0,1);
+box('Motor bracket '+t,'drive',6,0.6,5,s*12.5,ya+2.4,0,0x5f5e5a,[0,-3,0]);
+cyl('Hall encoder '+t,'drive',1.85,1.8,s*6.9,ya,0,0x0f6e56,[0,-6,0],0,1);
 });
-box('Chest panel (cosmetic, no screen)','shell',15,12,1,0,58,10.9,0x0b0f1a,[0,10,0]);
-box('Light-pipe bar (cosmetic diffuser)','shell',1.4,14,0.6,0,22,13.5,BL,[0,0,8],0x1e6bd6);
-[-1,1].forEach(s=>{const t=s<0?'L':'R';
-cyl('Wheel '+t+' (diameter = assumption)','drive',ya,7,s*px,ya,0,0x15171c,[s*22,0,0],0,1);
-cyl('Wheel orange outer ring '+t,'drive',ya+0.8,1.6,s*(px+3),ya,0,OR,[s*22,0,0],0,1);
-tor('Wheel blue ring '+t+' (cosmetic)','drive',ya*0.62,0.5,s*(px+3.9),ya,0,BL,[s*22,0,0],0,Math.PI/2,0,0x1e6bd6);
-box('Motor bracket '+t,'drive',9,0.8,7,s*13,ya+3.9,0,0x5f5e5a,[0,-6,0]);
-box((t==='L'?'Left':'Right')+' DC geared motor (size TBD, placeholder)','drive',8,7,7,s*13,ya,0,0xba7517,[0,-12,0]);
-cyl('Motor shaft '+t,'drive',0.8,4,s*17.5,ya,0,0xb4b2a9,[s*10,0,0],0,1);
-box('Wheel encoder '+t+' (type TBD)','drive',2.5,5,3,s*8,ya,0,0x0f6e56,[0,-12,0]);
-});
-box('Support base plate','drive',26,3,22,0,5,0,0x2c2f36,[0,-14,0]);
-box('Chassis plate','drive',28,1,26,0,py,0,0x888780,[0,-4,0]);
-cyl('Caster mount','drive',0.8,3,0,6.5,-10,0x5f5e5a,[0,-14,-8]);
-reg(new THREE.Mesh(new THREE.SphereGeometry(2.5,24,18),mat(0xb4b2a9)),'Caster wheel','drive',0,2.5,-10,[0,-14,-8]);
-const ey=50,eh=12,y0=ey-eh/2+0.5+0.2*u;
-const enc=new THREE.Mesh(new THREE.BoxGeometry(18,eh,14),new THREE.MeshLambertMaterial({color:0x7f77dd,transparent:true,opacity:0.2,depthWrite:false}));
-reg(enc,'Electronics enclosure','elec',0,ey,-1,[0,16,0]);enc.userData.fix=0.2;
+box('Chest tablet cradle (3D printed)','shell',32,22,6,0,58,10,0x1a1d24,[0,10,0]);
+box('HP Elite x2 (placeholder, size TBD)','elec',30,20,1.2,0,58,13.6,0x10151f,[0,10,16],0x14305a);
+box('Support base plate','drive',26,2,22,0,4.5,0,0x2c2f36,[0,-8,0]);
+box('Chassis plate','drive',28,1,22,0,py,0,0x888780,[0,-3,0]);
+reg(new THREE.Mesh(new THREE.SphereGeometry(1.7,24,18),mat(0xb4b2a9)),'Caster ball rear','drive',0,1.7,-9,[0,-8,-6]);
+if(casters===2)reg(new THREE.Mesh(new THREE.SphereGeometry(1.7,24,18),mat(0xb4b2a9)),'Caster ball front','drive',0,1.7,9,[0,-8,6]);
+box('Battery 3S Li-ion 15Ah (size TBD, placeholder)','power',18,6,12,0,py+3.5,-4,0xef9f27,[0,-5,-14]);
+box('BMS 3S 30A (placeholder)','power',7,0.8,4,-7,py+0.9,6.5,0x534ab7,[-8,-4,10]);
+box('Cytron MDD20A (placeholder, size TBD)','elec',8.4,1.5,6.2,7,py+1.25,6.5,0xd9304c,[8,-4,10]);
+cyl('Bulk capacitor (added, value TBD)','power',1.3,3.5,12.4,py+2.25,1.6,0x2b6cb0,[8,-4,4]);
+box('Power distribution (placeholder)','power',3.4,1.5,6,-12.3,py+1.25,-4,0x26215c,[-8,-4,-10]);
+box('Fuse 25A + holder (placeholder)','power',2.5,1.6,5,12.3,py+1.3,-4,0xba7517,[8,-4,-10]);
+box('Main switch (≥30A, placeholder)','power',4,2.4,1.6,-7,18,-12.9,0x854f0b,[-8,0,-12]);
+box('Charging port (≥5A, placeholder)','power',4,3,1.6,7,18,-12.9,0x3a3d45,[8,0,-12]);
+cyl('Emergency stop (added, rating TBD)','power',2.8,2.4,0,62,-15,0xe24b4a,[0,12,-12],1);
+const ey=50,y0=44.6;
+const enc=new THREE.Mesh(new THREE.BoxGeometry(22,12,8),new THREE.MeshLambertMaterial({color:0x7f77dd,transparent:true,opacity:0.2,depthWrite:false}));
+reg(enc,'Electronics enclosure','elec',0,ey,-3,[0,16,-8]);enc.userData.fix=0.2;
 enc.add(new THREE.LineSegments(new THREE.EdgesGeometry(enc.geometry),new THREE.LineBasicMaterial({color:0x534ab7})));
-box('ESP32 DevKit V1 (schematic block)','elec',5*u*0.8,0.4*u,2.8*u*0.8,-4,y0,1.5,0x534ab7,[0,16,0]);
-box('TB6612FNG motor driver (schematic block)','elec',2.5*u*0.8,0.4*u,2.5*u*0.8,4,y0,1.5,0x7f77dd,[0,18,0]);
-box('DC-DC buck converter (schematic block)','elec',2.5*u*0.8,0.8*u,2*u*0.8,4,y0,-4,0x3c3489,[0,20,0]);
-box('BMS (schematic block)','power',3*u*0.8,0.5*u,2*u*0.8,-4,y0,-4,0x534ab7,[8,16,0]);
-box('Power distribution (schematic block)','power',3*u*0.8,0.5*u,2*u*0.8,0,y0+4,-4,0x26215c,[-8,16,0]);
-box('Battery pack (size TBD, placeholder)','power',16,7,9,0,py+4,-6,0xef9f27,[0,-8,-18]);
-box('Main fuse + holder (schematic block)','power',2*u,1.2*u,3*u,-8,py+1.1*u,-9,0xba7517,[-8,-6,-14]);
-box('Main power switch (schematic block)','power',3*u*0.8,2,1.5,5,50,-9.9,0x854f0b,[8,10,-12]);
-cyl('Emergency stop (schematic)','power',2.2,1.4,0,58,-10.9,0xe24b4a,[0,12,-12],1);
-box('MPU6050 IMU (schematic block)','sens',2*u*0.8,0.3*u,1.6*u*0.8,0,py+1,6,0x1d9e75,[0,-4,10]);
-cyl('VL53L0X distance sensor (schematic)','sens',1.4,0.8,0,33,11.1,0x1d9e75,[0,0,16],1,0,0x0b6e50);
-tor('VL53L0X window ring','sens',1.9,0.2,0,33,11.5,BL,[0,0,16],0,0,0,0x1e6bd6);
-cyl('WS2812B LED (single, behind light-pipe)','inter',0.9,0.6,0,22,12.6,0xf09bff,[0,0,12],1,0,0x9b3db8);
-cyl('Speaker (schematic)','inter',2.2,1,6.5,46,7.6,0x2c2c2a,[10,0,12],1);
-cyl('Buzzer (schematic block)','inter',1*u*0.8,1.2*u*0.8,-7,y0+3,3,0x0f6e56,[0,18,0]);
-const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-36,0,0),new THREE.Vector3(-36,100,0),new THREE.Vector3(-41,0,0),new THREE.Vector3(-31,0,0),new THREE.Vector3(-41,100,0),new THREE.Vector3(-31,100,0)]);
-ruler=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xef9f27}));S.add(ruler);
-hl=null;hlKey=null;document.querySelectorAll('#tb tr').forEach(r=>r.classList.remove('on'));applyF();upd()}
-const gr=new THREE.GridHelper(220,22,0x888780,0x888780);gr.material.transparent=true;gr.material.opacity=0.25;S.add(gr);
-let th=0.5,ph=1.3,rad=250,tt=0.5,tp=1.3,tr=250,auto=false,drag=false,lx=0,ly=0,mvd=0,exv=0,flt='all',sel=null,ghost=false,hl=null,hlKey=null;
-const T=new THREE.Vector3(0,48,0);
-function upd(){cam.position.set(T.x+rad*Math.sin(ph)*Math.sin(th),T.y+rad*Math.cos(ph),T.z+rad*Math.sin(ph)*Math.cos(th));cam.lookAt(T)}
+box('ESP32 (schematic block)','elec',5.1*u,0.5*u,2.8*u,-5,y0,-3,0x534ab7,[0,12,-8]);
+box('Encoder level shifter (added, placeholder)','elec',2,0.5,1.2,4,y0,0.2,0x16a085,[0,14,-4]);
+box('5V buck 5A (placeholder)','power',5,1,4,5,y0+0.4,-3,0x3c3489,[0,16,-8]);
+box('Audio amplifier (added, placeholder)','elec',2.8,0.6,2,9.3,y0,-3,0xc0392b,[0,18,-8]);
+box('USB-C PD converter (placeholder)','power',7,1.4,5,-5,y0+3.5,-3,0x7f77dd,[0,20,-8]);
+cyl('Speaker (model TBD)','inter',2.4,0.8,9,43.5,9.2,0x2c2c2a,[8,0,10],1);
+[['Status LED (green)',3,0x22c55e],['Error LED (red)',0,0xef4444],['Activity LED (blue)',-3,0x3b82f6]].forEach(a=>cyl(a[0],'inter',0.55,0.5,a[1],44.5,11.7,a[2],[0,0,10],1,0,a[2]));
+const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-44,0,0),new THREE.Vector3(-44,100,0),new THREE.Vector3(-49,0,0),new THREE.Vector3(-39,0,0),new THREE.Vector3(-49,100,0),new THREE.Vector3(-39,100,0)]);
+ruler=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xef9f27}));Rb.add(ruler);
+rows();applyF();upd()}
+const gr=new THREE.GridHelper(1000,100,0x888780,0x888780);gr.material.transparent=true;gr.material.opacity=0.25;S.add(gr);
+let th=0.5,ph=1.3,rad=250,tt=0.5,tp=1.3,tr=250,auto=false,drag=false,lx=0,ly=0,mvd=0,follow=true;
+const T3=new THREE.Vector3(0,48,0);
+function upd(){cam.position.set(T3.x+rad*Math.sin(ph)*Math.sin(th),T3.y+rad*Math.cos(ph),T3.z+rad*Math.sin(ph)*Math.cos(th));cam.lookAt(T3)}
 function rs(){const w=cv.clientWidth,h=cv.clientHeight;R_.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
 addEventListener('resize',rs);rs();
-const VW=[['Iso',0.5,1.3],['Front',0,1.5],['Back',Math.PI,1.5],['Left',-Math.PI/2,1.5],['Right',Math.PI/2,1.5],['Top',0,0.02],['Bottom',0,3.1]];
-const vb=document.getElementById('views');
-VW.forEach((v,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=v[0];b.onclick=()=>{tt=v[1];tp=v[2];tr=250;document.querySelectorAll('#views .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on')};vb.appendChild(b)});
-const GN=[['all','All'],['shell','Shell'],['drive','Drive & chassis'],['elec','Electronics'],['power','Power'],['sens','Sensors'],['inter','Interaction']];
-const gb=document.getElementById('grp');
-GN.forEach((g,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=g[1];b.onclick=()=>{flt=g[0];hl=null;hlKey=null;clearRows();document.querySelectorAll('#grp .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyF()};gb.appendChild(b)});
 function applyF(){P.forEach(m=>{const u=m.userData;const on=hl?hl.includes(m):(flt==='all'||u.g===flt);let base=u.fix||1;if(u.g==='shell'&&ghost)base=0.1;m.material.opacity=on?base:(hl?0.12:0.05);m.material.depthWrite=m.material.opacity>0.5;m.material.emissive.setHex(hl&&hl.includes(m)?0x554400:u.em)})}
 function clearRows(){document.querySelectorAll('#tb tr').forEach(r=>r.classList.remove('on'))}
-const tb=document.getElementById('tb');
-CP.forEach(c=>{const r=document.createElement('tr');r.innerHTML='<td>'+c[0]+'</td><td>'+c[1]+'</td><td>'+c[3]+'</td><td class="'+(c[4]?'g':'t')+'">'+(c[4]?'Model confirmed':'TBD — VERIFY WITH DATASHEET')+'</td>';
-r.onclick=()=>{if(hlKey===c[2]){hl=null;hlKey=null;clearRows();applyF();return}
-hl=P.filter(m=>m.userData.n.toLowerCase().includes(c[2].toLowerCase()));hlKey=c[2];clearRows();r.classList.add('on');
-if(hl.some(m=>m.userData.g!=='shell')){ghost=true;const b=document.getElementById('b1');b.classList.add('on');b.textContent='Solid shell'}
-info.innerHTML='<b>'+c[0]+'</b> ×'+c[1]+'<br>'+c[3];applyF();document.getElementById('viewer').scrollIntoView({behavior:'smooth',block:'center'})};tb.appendChild(r)});
-[['sD','vD',v=>D=v],['sC','vC',v=>cs=v]].forEach(a=>{const s=document.getElementById(a[0]);s.oninput=()=>{document.getElementById(a[1]).textContent=s.value;a[2](+s.value);build()}});
+function rows(){const tb=document.getElementById('tb');tb.innerHTML='';const li=L==='ar'?0:1;
+CP.forEach(c=>{const r=document.createElement('tr');const q=c[1]===1.5?'1–2':(c[1]===3?'3+':(c[1]||'—'));
+r.innerHTML='<td>'+c[2][li]+'</td><td>'+q+'</td><td>'+c[3][li]+'</td><td>'+c[4][li]+'</td><td class="'+c[5]+'">'+T[c[5]][li]+'</td>';
+if(c[0]){r.className='k';r.onclick=()=>{if(hlKey===c[0]){hl=null;hlKey=null;clearRows();applyF();return}
+hl=P.filter(m=>m.userData.n.toLowerCase().includes(c[0].toLowerCase()));hlKey=c[0];clearRows();r.classList.add('on');
+if(hl.some(m=>m.userData.g!=='shell')){ghost=true;lab()}
+info.innerHTML='<b>'+c[2][li]+'</b><br>'+c[3][li]+'<br>'+c[4][li];applyF();document.getElementById('viewer').scrollIntoView({behavior:'smooth',block:'center'})}}
+tb.appendChild(r)})}
+function lab(){const li=L==='ar'?0:1;document.getElementById('b1').textContent=T[ghost?'solid':'ghost'][li];document.getElementById('b1').classList.toggle('on',ghost);
+document.getElementById('b2').textContent=T[auto?'stop':'auto'][li];document.getElementById('b2').classList.toggle('on',auto);
+document.getElementById('c2b').textContent=T[casters===2?'c2l':'c1l'][li];
+document.getElementById('es').textContent=T[st.es?'esr':'es'][li];document.getElementById('es').classList.toggle('on',st.es)}
+function mk(){const li=L==='ar'?0:1;const vb=document.getElementById('views');vb.innerHTML='';
+VW.forEach((v,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=v[li];b.onclick=()=>{tt=v[2];tp=v[3];tr=250;document.querySelectorAll('#views .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on')};vb.appendChild(b)});
+const gb=document.getElementById('grp');gb.innerHTML='';
+GN.forEach(g=>{const b=document.createElement('button');b.className='bt'+(g[0]===flt?' on':'');b.textContent=g[li+1];b.onclick=()=>{flt=g[0];hl=null;hlKey=null;clearRows();document.querySelectorAll('#grp .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyF()};gb.appendChild(b)});
+const nt=document.getElementById('nt');nt.innerHTML='';NT.forEach(n=>{const l=document.createElement('li');l.textContent=n[li];nt.appendChild(l)});
+document.getElementById('fl').textContent=T.fl[li];document.getElementById('rs').textContent=T.rs[li]}
+function setLang(l){L=l;const li=l==='ar'?0:1;document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr';
+document.querySelectorAll('[data-i]').forEach(e=>e.textContent=T[e.dataset.i][li]);document.getElementById('lg').textContent=l==='ar'?'English':'العربية';
+info.textContent=T.click[li];mk();rows();lab();hl=null;hlKey=null;applyF()}
+// ---- drive simulation ----
+const st={x:0,z:0,th:0,wl:0,wr:0,rl:0,rr:0,dist:0,es:false,V:11.1,pwm:0.8};const key={},btn={t:0,r:0};const RW=7.5,TRK=40;
+function resetSim(){st.x=0;st.z=0;st.th=0;st.wl=0;st.wr=0;st.rl=0;st.rr=0;st.dist=0}
+const KM={ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d',ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r'};
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'){key.u=key.d=key.l=key.r=false;btn.t=btn.r=0;e.preventDefault();return}const k=KM[e.key];if(k){key[k]=true;e.preventDefault()}});
+addEventListener('keyup',e=>{const k=KM[e.key];if(k)key[k]=false});
+function hold(id,t,r){const b=document.getElementById(id);const on=ev=>{ev.preventDefault();btn.t=t;btn.r=r};const off=()=>{btn.t=0;btn.r=0};
+b.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,off))}
+hold('bu',1,0);hold('bd',-1,0);hold('bl',0,1);hold('br',0,-1);
+document.getElementById('bs').onclick=()=>{key.u=key.d=key.l=key.r=false;btn.t=btn.r=0;st.wl=st.wr=0};
+document.getElementById('sV').oninput=function(){st.V=+this.value;document.getElementById('vV').textContent=this.value+' V'};
+document.getElementById('sP').oninput=function(){st.pwm=this.value/100;document.getElementById('vP').textContent=this.value+'%'};
+document.getElementById('fl').onclick=function(){follow=!follow;this.classList.toggle('on',follow);if(!follow)T3.set(0,48,0)};
+document.getElementById('rs').onclick=resetSim;
+document.getElementById('es').onclick=()=>{st.es=!st.es;lab()};
+function step(dt){const t=Math.max(-1,Math.min(1,(key.u?1:0)-(key.d?1:0)+btn.t)),r=Math.max(-1,Math.min(1,(key.l?1:0)-(key.r?1:0)+btn.r));
+const wmax=122*(st.V/12)*2*Math.PI/60;const cl=Math.max(-1,Math.min(1,t-r)),cr=Math.max(-1,Math.min(1,t+r));
+const tl=st.es?0:cl*st.pwm*wmax,tr_=st.es?0:cr*st.pwm*wmax,a=1-Math.exp(-dt/0.3);
+st.wl+=(tl-st.wl)*a;st.wr+=(tr_-st.wr)*a;
+const v=RW*(st.wl+st.wr)/2,yaw=RW*(st.wr-st.wl)/TRK;
+st.th+=yaw*dt;st.x+=v*Math.sin(st.th)*dt;st.z+=v*Math.cos(st.th)*dt;st.dist+=Math.abs(v)*dt;st.rl+=st.wl*dt/(2*Math.PI);st.rr+=st.wr*dt/(2*Math.PI);
+Rb.position.set(st.x,0,st.z);Rb.rotation.y=st.th;
+WHL.forEach(w=>w.rotateY(-(w.userData.side==='L'?st.wl:st.wr)*dt));
+gr.position.set(Math.round(st.x/10)*10,0,Math.round(st.z/10)*10);
+if(follow)T3.set(st.x,48,st.z);
+return{v:v/100,wmax:wmax*RW/100}}
+let hudT=0;
+function hud(s){const li=L==='ar'?0:1;const rpm=w=>(w*60/(2*Math.PI)).toFixed(0);let h=((st.th*180/Math.PI)%360+360)%360;
+hudEl.innerHTML='<span class="l">'+T.hSpd[li]+'</span> <b>'+Math.abs(s.v).toFixed(2)+'</b> m/s · '+(Math.abs(s.v)*3.6).toFixed(2)+' km/h'+(s.v<-0.005?' ◀':'')+
+'<br><span class="l">'+T.hRpm[li]+':</span> '+rpm(st.wl)+' / '+rpm(st.wr)+'<br><span class="l">'+T.hDist[li]+':</span> '+(st.dist/100).toFixed(2)+' m · <span class="l">'+T.hHead[li]+':</span> '+h.toFixed(0)+'°'+
+'<br><span class="l">'+T.hEnc[li]+':</span> '+Math.round(st.rl*1440)+' / '+Math.round(st.rr*1440)+'<br><span class="l">'+T.hMax[li]+' @'+st.V.toFixed(1)+'V:</span> '+s.wmax.toFixed(2)+' m/s'+(st.es?'<br><span style="color:var(--bad);font-weight:700">'+T.hES[li]+'</span>':'')}
+document.getElementById('lg').onclick=()=>setLang(L==='ar'?'en':'ar');
+document.getElementById('c2b').onclick=()=>{casters=casters===2?1:2;build();lab()};
+document.getElementById('sC').oninput=function(){cs=+this.value;document.getElementById('vC').textContent=this.value;build()};
 document.getElementById('ex').oninput=function(){exv=this.value/100};
+document.getElementById('b1').onclick=()=>{ghost=!ghost;lab();applyF()};
+document.getElementById('b2').onclick=()=>{auto=!auto;lab()};
 cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;mvd=0;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
 cv.addEventListener('pointerup',e=>{drag=false;cv.style.cursor='grab';if(mvd<4)selectAt(e)});
 const rcst=new THREE.Raycaster(),m2=new THREE.Vector2();
 function hit(e){const r=cv.getBoundingClientRect();m2.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);rcst.setFromCamera(m2,cam);return rcst.intersectObjects(P.filter(p=>p.visible&&p.material.opacity>0.5),false)[0]}
-function selectAt(e){const h=hit(e);if(sel&&!(hl&&hl.includes(sel)))sel.material.emissive.setHex(sel.userData.em);if(h){sel=h.object;sel.material.emissive.setHex(0x554400);const g=sel.userData.g;info.innerHTML='<b>'+sel.userData.n+'</b><br>'+(g==='shell'?'Shape-only part, not an electronic component':'Real dimensions and specs: TBD — VERIFY WITH DATASHEET')}else{sel=null;info.textContent='Click any part'}}
+function selectAt(e){const li=L==='ar'?0:1;const h=hit(e);if(sel&&!(hl&&hl.includes(sel)))sel.material.emissive.setHex(sel.userData.em);if(h){sel=h.object;sel.material.emissive.setHex(0x554400);info.innerHTML='<b style="font-weight:500;direction:ltr;display:inline-block">'+sel.userData.n+'</b><br>'+(sel.userData.g==='shell'?T.shape[li]:T.real[li])}else{sel=null;info.textContent=T.click[li]}}
 cv.addEventListener('pointermove',e=>{
 if(drag){const dx=e.clientX-lx,dy=e.clientY-ly;mvd+=Math.abs(dx)+Math.abs(dy);th-=dx*0.008;ph=Math.min(3.1,Math.max(0.02,ph-dy*0.008));tt=th;tp=ph;lx=e.clientX;ly=e.clientY;upd();return}
 const h=hit(e);if(h){tip.textContent=h.object.userData.n;tip.style.display='block'}else tip.style.display='none'});
-cv.addEventListener('wheel',e=>{e.preventDefault();rad=Math.min(450,Math.max(90,rad+e.deltaY*0.3));tr=rad;upd()},{passive:false});
-let pd=0;cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pd){rad=Math.min(450,Math.max(90,rad-(d-pd)*0.8));tr=rad;upd()}pd=d}},{passive:true});
+cv.addEventListener('wheel',e=>{e.preventDefault();rad=Math.min(500,Math.max(90,rad+e.deltaY*0.3));tr=rad;upd()},{passive:false});
+let pd=0;cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pd){rad=Math.min(500,Math.max(90,rad-(d-pd)*0.8));tr=rad;upd()}pd=d}},{passive:true});
 cv.addEventListener('touchend',()=>{pd=0});
-document.getElementById('b1').onclick=function(){ghost=!ghost;this.classList.toggle('on',ghost);this.textContent=ghost?'Solid shell':'Ghost shell';applyF()};
-document.getElementById('b2').onclick=function(){auto=!auto;this.classList.toggle('on',auto);this.textContent=auto?'Stop rotation':'Auto-rotate'};
-build();
-(function loop(){requestAnimationFrame(loop);
+build();setLang('en');
+let last=performance.now();
+(function loop(now){requestAnimationFrame(loop);const dt=Math.min(0.05,(now-last)/1000||0.016);last=now;
 if(auto&&!drag){th+=0.006;tt=th}else if(!drag){th+=(tt-th)*0.12;ph+=(tp-ph)*0.12;rad+=(tr-rad)*0.12}
-upd();
+const s=step(dt);upd();
 P.forEach(m=>{const b=m.userData.b,e=m.userData.e;m.position.set(b.x+e[0]*exv,b.y+e[1]*exv,b.z+e[2]*exv)});
-R_.render(S,cam)})();
+hudT+=dt;if(hudT>0.1){hudT=0;hud(s)}
+R_.render(S,cam)})(performance.now());
 </script>
 </body>
 </html>
