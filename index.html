@@ -30,6 +30,9 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:var(--acbg)}.dot{d
 .tl{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 11px}.tl span{display:block;font-size:11.5px;color:var(--mut)}.tl b{font-size:19px;color:var(--ac);font-weight:600;font-variant-numeric:tabular-nums}.tl small{font-size:12px;color:var(--mut);margin-left:3px}
 .tl.est b{color:#2e90ff}.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}.cg canvas{width:100%;height:170px;background:var(--card);border:1px solid var(--line);border-radius:10px;cursor:default}
 #hud{position:absolute;left:10px;bottom:10px;padding:8px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:12px;line-height:1.5;max-width:60%;opacity:.96;font-variant-numeric:tabular-nums}#hud b{font-size:22px;color:var(--ac)}#hud i{color:var(--mut);font-style:normal}
+#v:fullscreen{height:100vh!important;width:100vw!important;border-radius:0}.card #hud,.card #dp,.card #tip{display:none}
+.vrg li b{color:var(--ac)}
+.sc{font-size:12px;color:var(--mut)}.fld{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:2px}.fld input{font:inherit;width:100%;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--fg)}.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:10px 0}td input[type=number]{width:78px;font:inherit;padding:2px 4px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--fg)}.ok{color:#1d9e75;font-weight:600}.bad{color:#d4463d;font-weight:600}
 </style></head><body><main>
 <h1>Educational Smart Robot V1 — Full 3D Assembly</h1>
 <p class="sub">100 cm tall · realistic component models in place · wires routed between them · Main PCB · HP Elite x2 with live screen · drive with arrow keys / WASD</p>
@@ -37,24 +40,39 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:var(--acbg)}.dot{d
 <div id="dp"><span></span><button id="bu">▲</button><span></span><button id="bl">◀</button><button id="bs">■</button><button id="br">▶</button><span></span><button id="bd">▼</button><span></span></div></div>
 <div class="side">
 <div class="pn">Camera views</div><div id="views" class="row"></div>
-<div class="pn">Shell</div><div class="row"><button class="bt on" id="gh">Ghost shell</button><button class="bt" id="ar">Auto-rotate</button></div>
+<div class="pn">Shell</div><div class="row"><button class="bt on" id="gh">Ghost shell</button><button class="bt" id="ar">Auto-rotate</button><button class="bt" id="lbb">Component labels</button></div>
 <div class="pn">Wires</div><div id="wc" class="row"></div>
 <div class="sl"><span>Wire thickness</span><b id="vT">1.8×</b></div><input type="range" id="sT" min="1" max="4" step="0.2" value="1.8">
 <div class="pn">Show only</div><div id="grp" class="row"></div>
 <div class="pn">Drive simulation</div>
-<div class="sl"><span>Battery voltage</span><b id="vV">11.1 V</b></div><input type="range" id="sV" min="9" max="12.6" step="0.1" value="11.1">
+<div class="sl"><span><label><input type="checkbox" id="mv"> Manual voltage</label></span><b id="vV">11.1 V</b></div><input type="range" id="sV" min="9" max="12.6" step="0.1" value="11.1">
 <div class="sl"><span>PWM limit</span><b id="vP">80%</b></div><input type="range" id="sP" min="10" max="100" step="5" value="80">
 <div class="row" style="margin-top:6px"><button class="bt on" id="fl">Follow camera</button><button class="bt" id="rs">Reset</button></div>
+<div class="pn">Power button &amp; charging</div><div class="row"><button class="bt on" id="pwrb">Power: ON</button><button class="bt" id="chgb">Charger: unplugged</button></div><div class="sl"><span>Battery charge (SoC)</span><b id="vS">80%</b></div><input type="range" id="sS" min="0" max="100" value="80"><div class="sl"><span>Time warp (battery only)</span><b id="vW">×1</b></div><input type="range" id="sW" min="0" max="3" step="1" value="0"><div class="sc">Click the rocker or the DC inlet on the robot’s back (or press P / C).</div>
+<div class="pn">Virtual reality (VR)</div><div class="row"><button class="bt" id="vrb">Enter VR headset</button><button class="bt" id="cbb">Cardboard (phone)</button><button class="bt" id="pvb">Stereo preview (no headset)</button></div><div class="sub" id="vrmsg" style="margin:4px 0 0">Checking VR support…</div>
 <div class="pn">Selected</div><div id="info">Click any part or wire</div></div></div>
 <h2>Live telemetry (updates while the robot moves)</h2>
 <p class="sub">Drive the robot (arrow keys / WASD / the pad). Blue tiles are <b>estimates</b> from a simple DC-motor model built on the README motor figures (12 V, no-load 122 RPM / 0.35 A, stall 7 A); they ignore real load, inertia and slip. Everything else is kinematics (Ø150 mm wheels, 40 cm wheel spacing assumed).</p>
 <div class="tiles" id="tiles"></div>
 <div class="cg"><canvas id="ch1" width="700" height="340"></canvas><canvas id="ch2" width="700" height="340"></canvas></div>
+<h2>Power &amp; battery calculator (V · A · W for every component)</h2>
+<p class="sub">Defaults come from datasheets where I found them, otherwise they are labelled <b>assumption</b> or <b>TBD — VERIFY WITH DATASHEET</b>. Edit any value (grey inputs) and everything below, the 3D battery and the weight update. “From battery” divides by the converter efficiency.</p>
+<div class="tw"><table><thead><tr><th></th><th>Component</th><th>Rail</th><th>V</th><th>I typ (A)</th><th>I peak (A)</th><th>P typ (W)</th><th>P peak (W)</th><th>From battery, typ (W)</th><th>Source / status</th></tr></thead><tbody id="elb"></tbody><tfoot id="elf"></tfoot></table></div>
+<h3 style="font-size:15px;margin:18px 0 4px">Battery sizing inputs</h3><div class="fg" id="bset"></div><div class="row"><button class="bt" id="apr">Apply recommended pack</button><button class="bt" id="rdf">Reset defaults</button></div>
+<div class="tiles" id="bres" style="margin-top:10px"></div>
+<h2>Weight, size &amp; balance (updates with every change)</h2>
+<div class="tw"><table><thead><tr><th>Item</th><th>Weight (g)</th><th>Basis</th></tr></thead><tbody id="wtb"></tbody></table></div>
+<div class="tiles" id="wres" style="margin-top:10px"></div>
 <div class="warn"><b>Honest status:</b> all component bodies are procedural models (shapes and colours follow the real parts; sizes are typical or <b>TBD — VERIFY WITH DATASHEET</b>). The wire routes are illustrative paths, not a harness drawing. Items the README does not define (buck-converter input feed, audio source, caster, whether F1/SW1 sit on the PCB) are drawn as assumptions and flagged below.</div>
 <h2>Components in place</h2><p class="sub">Click a row: the part is highlighted and the camera flies to it (the shell turns transparent automatically).</p>
 <div class="tw"><table><thead><tr><th>Component</th><th>Qty</th><th>Location</th><th>Specification / status</th></tr></thead><tbody id="tb"></tbody></table></div>
 <h2>Wiring (what is connected to what)</h2><p class="sub">Click a row to highlight the wire. Wire sizes are a starting point from the earlier README (12 / 14 / 18 / 20–24 AWG); final selection must match current and connectors.</p>
 <div class="tw"><table><thead><tr><th>#</th><th>From → To</th><th>Type</th><th>Wire (starting point)</th></tr></thead><tbody id="wb"></tbody></table></div>
+<h2>Virtual reality (VR) mode</h2>
+<p class="sub">VR puts you inside the computer-generated 3D robot at real size (100 cm). Two ways to use it:</p>
+<ul class="vrg"><li><b>VR headset (WebXR):</b> open this page in the headset browser (e.g. Meta Quest Browser) or in a desktop browser with a headset, then press <b>Enter VR headset</b>. <b>Trigger</b> selects a part or wire (its info appears on the panel on your left controller). <b>Left stick</b> drives the robot. <b>Right stick</b> moves you around. <b>X</b> toggles the ghost shell, <b>Y</b> cycles life-size / table-top miniature / giant, <b>grip</b> resets the robot. The <b>component board</b> floats on your left: point at a row and press the trigger to highlight that part (an orange line leads to it); <b>B</b> goes to the next part and <b>A</b> shows numbered labels on every part.</li>
+<li><b>Cardboard (phone):</b> press <b>Cardboard (phone)</b>, allow motion sensors, put the phone in a Cardboard-style viewer. Turn your head to look around. <b>Tap</b> the screen to start / stop the robot driving forward. Exit with the phone's back gesture / Esc. (No lens-distortion correction, so it is an approximation.) A <b>component board</b> and numbered labels appear automatically, and a tour highlights each component for 4 seconds. In Stereo preview: <b>N</b> / <b>B</b> next / previous part, <b>L</b> labels.</li>
+<li>WebXR and fullscreen can be blocked when a page is shown inside an embedded frame: open the published link in its own browser tab.</li></ul>
 <h2>Assumptions and open points</h2><ul id="nt"></ul>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -62,6 +80,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:var(--acbg)}.dot{d
 const T=THREE,cv=document.getElementById('c'),tip=document.getElementById('tip'),info=document.getElementById('info');
 const R_=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R_.setPixelRatio(Math.min(devicePixelRatio,2));
 const S=new T.Scene(),cam=new T.PerspectiveCamera(40,1,0.5,3000);
+const rig=new T.Group();rig.add(cam);S.add(rig);R_.xr.enabled=true;R_.xr.setReferenceSpaceType('local-floor');
 S.add(new T.HemisphereLight(0xffffff,0x556677,0.8));const d1=new T.DirectionalLight(0xffffff,0.85);d1.position.set(150,300,200);S.add(d1);const d2=new T.DirectionalLight(0xffffff,0.35);d2.position.set(-200,120,-150);S.add(d2);
 const Rb=new T.Group();S.add(Rb);const ALL=[],WIRES=[];const Wg=new T.Group();Rb.add(Wg);
 const std=(c,r,m,o)=>new T.MeshStandardMaterial({color:c,roughness:r===undefined?0.55:r,metalness:m||0,transparent:o!==undefined,opacity:o===undefined?1:o});
@@ -100,11 +119,16 @@ function wheel(s){const g=new T.Group();g.position.set(s*PX,ya,0);wl.add(g);
 B(ch,26,2,22,0,4.5,0,std(0x2c2f36,.7));B(ch,28,1,22,0,py,0,std(0x888780,.5,.5));
 [-9,9].forEach(z=>{const c=new T.Group();c.position.set(0,0,z);cs.add(c);Sp(c,1.7,0,1.7,0,std(0xb9bcc2,.3,.9));Cy(c,0.8,1.2,0,3.3,0,std(0x5f5e5a,.5,.6));Cy(c,0.4,0.6,0,3.9,0,std(0x5f5e5a,.5,.6))});
 [[-8.5,-5.5],[8.5,-5.5],[-8.5,5.5],[8.5,5.5]].forEach(p=>Cy(ch,0.35,11.4,p[0],18.2,p[1]-1,std(0xc9a227,.4,.8)));
+const CFG={S:3,P:5,cellAh:3.0,cellG:47,cellImax:10,usable:0.85,etaBuck:0.90,etaPD:0.88,etaDrv:0.97,hpTyp:18,hpPeak:45,cruise:0.5,crr:0.03,slope:0,targetH:4,tMovTyp:0.3,tMovHeavy:0.7,shellT:2.5,fill:0.7};
+const CFG0=JSON.parse(JSON.stringify(CFG));const INC={hc:true,dht:true,ol:true,led:true,aud:true,cam:true,hp:true};let WOFF=[];const lcCache={};
 // ================= POWER =================
 function lab(txt,sub,w,h,bg,fg){return cvTex(512,Math.round(512*h/w),(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.fillStyle=fg;c.font='bold '+Math.round(H*.3)+'px Arial';c.textAlign='center';c.fillText(txt,W/2,H*.5);c.font=Math.round(H*.18)+'px Arial';c.fillText(sub,W/2,H*.78)})}
-const bat=PT('BAT','3S Li-ion battery pack 11.1 V 15 Ah','power');
-B(bat,16,6,12,0,15.5,-4,std(0x15171a,.6));plane(bat,12,4,0,18.52,-4,lab('3S Li-ion','11.1 V · 15 Ah',12,4,'#1b1e22','#e8e8e8')).rotation.x=-Math.PI/2;
-for(let i=0;i<8;i++)Cy(bat,0.3,0.05,-7+i*2,18.51,-8.5,std(0x777,.4,.8));
+const bat=PT('BAT','3S Li-ion battery pack (resizes with the cells)','power');
+function buildBattery(){const P=CFG.P,S_=CFG.S,w=P*1.86+0.4,h=S_*1.86+0.4,d=6.9,cz=-8,y0=12.8;while(bat.children.length)bat.remove(bat.children[0]);
+ B(bat,w,h,d,0,y0+h/2,cz,std(0x1b1d22,.6));plane(bat,Math.min(w,12),3.2,0,y0+h+0.02,cz,lab('3S'+P+'P Li-ion',(S_*3.7).toFixed(1)+' V · '+(P*CFG.cellAh).toFixed(0)+' Ah',12,3.2,'#1b1e22','#e8e8e8')).rotation.x=-Math.PI/2;
+ plane(bat,w,h,0,y0+h/2,cz+d/2+0.02,cvTex(512,Math.max(64,Math.round(512*h/w)),(c,W,H)=>{c.fillStyle='#1b1d22';c.fillRect(0,0,W,H);c.strokeStyle='#8a8d93';c.lineWidth=3;const r=Math.min(W/P,H/S_)*0.42;for(let i=0;i<P;i++)for(let j=0;j<S_;j++){c.beginPath();c.arc((i+.5)*W/P,(j+.5)*H/S_,r,0,7);c.stroke()}}));
+ Cy(bat,0.25,0.5,0.8,y0+h+0.2,cz-d/2-0.2,std(0xd62828,.5),'z');Cy(bat,0.25,0.5,2.6,y0+h+0.2,cz-d/2-0.2,std(0x1b1b1b,.5),'z');lcCache.BAT=null}
+buildBattery();
 const bms=PT('BMS','3S 30A BMS (protection + balancing)','power');
 B(bms,7,0.16,4,-7,13.4,6.5,std(0x1c7a3c,.5));for(let i=0;i<6;i++)B(bms,0.9,0.4,0.7,-9.4+i*1.0,13.7,5.9+((i%2)*1.1),std(0x15151a,.4));B(bms,1.5,0.7,0.6,-4.2,13.8,8.1,std(0xf2eedd,.5));
 [-1.5,-0.5,0.5,1.5].forEach(x=>B(bms,0.18,0.2,0.18,-7+x,13.55,4.6,std(0xd4af37,.3,.9)));
@@ -114,8 +138,15 @@ const bk=PT('BUCK','5 V / 5 A buck converter','power');
 B(bk,5.5,0.16,3.2,11.2,13.3,-4,std(0x1c4fa8,.5));B(bk,1.5,1.4,1.5,10.3,14.1,-4,std(0x1b1b1b,.6));Cy(bk,0.6,1.2,12.4,14.0,-3.4,std(0xc4c8ce,.3,.9));Cy(bk,0.5,1.0,12.4,14.0,-4.7,std(0xc4c8ce,.3,.9));B(bk,0.8,0.7,0.8,9.1,13.8,-3.2,std(0x1e5bd6,.5));B(bk,1,0.5,1,11.0,13.7,-2.6,std(0x15151a,.5));
 const hc=PT('HPCONV','HP USB-C PD power converter','power');
 B(hc,5.5,0.16,3.5,-11.2,13.3,-4,std(0x15171c,.5));B(hc,1.4,1.3,1.4,-12.5,14.0,-4.5,std(0x2a2a2f,.6));B(hc,0.95,0.38,0.9,-11.2,13.62,-2.2,std(0xc8ccd2,.3,.9));Cy(hc,0.55,1.0,-9.6,13.9,-4.2,std(0xc4c8ce,.3,.9));
-const sw=PT('SW','Main switch ≥ 30 A DC (SW1)','power');B(sw,2.6,1.8,1.6,6,18,-13.1,std(0x1a1a1a,.5));B(sw,1.6,1.2,0.5,6,18,-13.9,std(0xc62828,.4));
-const cg=PT('CHG','Charging connector (≥ 5 A)','power');B(cg,2.4,2.0,1.6,-6,18,-13.1,std(0x1a1a1a,.5));Cy(cg,0.55,0.4,-6,18,-14,std(0x050505,.9),'z');
+const sw=PT('SW','Main power switch ≥ 30 A DC (SW1) — rocker on the back panel','power');
+const cg=PT('CHG','Charging inlet (DC) on the back panel','power');
+const pnl=PT('PANEL','Back panel (3D printed)','shell');
+B(pnl,16,7,0.6,0,22,-13.7,std(0x23262c,.6));
+{const tx=cvTex(1024,448,(c,W,H)=>{c.fillStyle='#23262c';c.fillRect(0,0,W,H);c.fillStyle='#f1efe8';c.font='bold 56px Arial';c.textAlign='center';c.fillText('CHARGE',W*0.27,70);c.font='38px Arial';c.fillText('12.6 V · 5 A',W*0.27,120);c.font='bold 56px Arial';c.fillText('POWER',W*0.73,70);c.font='38px Arial';c.fillText('ON ▲   ▼ OFF',W*0.73,120)});const p=plane(pnl,16,7,0,22,-14.02,tx);p.rotation.y=Math.PI}
+B(sw,2.8,2.0,1.4,4.2,22,-13.5,std(0x1a1a1a,.5));const swK=new T.Group();swK.position.set(4.2,22,-14.4);sw.add(swK);B(swK,2.2,0.8,0.55,0,0.42,0,std(0x1f9d55,.4));B(swK,2.2,0.8,0.55,0,-0.42,0,std(0x3a3a3a,.5));
+B(cg,2.6,2.6,1.4,-4.2,22,-13.5,std(0x1a1a1a,.5));Cy(cg,1.05,0.5,-4.2,22,-14.3,std(0x2a2a2a,.6),'z');Cy(cg,0.62,0.55,-4.2,22,-14.33,std(0x000000,.9),'z');Cy(cg,0.14,0.5,-4.2,22,-14.2,std(0xc9a227,.3,.9),'z');
+const plug=new T.Group();Rb.add(plug);plug.visible=false;Cy(plug,0.95,3.2,-4.2,22,-16.1,std(0x15151a,.5),'z');Cy(plug,0.5,1.2,-4.2,22,-18.3,std(0x15151a,.6),'z');
+plug.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([new T.Vector3(-4.2,22,-18.8),new T.Vector3(-4.2,19,-23),new T.Vector3(-5.5,8,-30),new T.Vector3(-6,0.5,-38)]),40,0.35,6,false),std(0x15151a,.6)));B(plug,10,4.5,6,-6,2.3,-42,std(0x3a3d45,.5));B(plug,6,0.1,3,-6,4.6,-42,std(0x15151a,.5));
 // ================= MDD20A =================
 const md=PT('MDD','Cytron MDD20A motor driver','drive');
 B(md,8.4,0.16,6.2,7,13.3,6.5,std(0xc9252b,.45));[0,1,2,3,4,5,6,7].forEach(i=>B(md,0.9,0.45,0.7,3.9+i*1.0,13.65,(i%2?7.6:5.4),std(0x15151a,.4)));
@@ -169,15 +200,16 @@ const pc=(lx,lz,h)=>[lx,PY+0.08+(h===undefined?1.0:h),lz+PZ];
 const J={};CONN.forEach(k=>J[k[0]]=pc(k[1],k[2],1.5));
 const AWG={12:0.25,14:0.2,18:0.13,22:0.08,24:0.07};
 const WL=[
-['BAT+ → BMS B+','pow',[[[[3,18.5,-9.8],[3,20.5,-6],[-6,20.5,2],[-8.6,14,4.4]],12,0xd62828]],'12 AWG'],
-['BAT− → BMS B−','pow',[[[[5.5,18.5,-9.8],[5.5,19.8,-6],[-7,19.5,3],[-9.8,14,4.4]],12,0x1b1b1b]],'12 AWG'],
+['BAT+ → BMS B+','pow',[[[[0.8,19.6,-11.6],[0.8,21,-8],[-6,20.5,2],[-8.6,14,4.4]],12,0xd62828]],'12 AWG'],
+['BAT− → BMS B−','pow',[[[[2.6,19.6,-11.6],[2.6,20.6,-8],[-7,19.5,3],[-9.8,14,4.4]],12,0x1b1b1b]],'12 AWG'],
 ['BMS P+ → Fuse F1','pow',[[[[-5.2,13.9,4.4],[-5.2,15.5,1],[-11.5,15.2,2.5],[-12.4,14.3,2.2]],12,0xd62828]],'12 AWG'],
-['Fuse F1 → Main PCB J1 (+)','pow',[[[[-12.4,14.3,0.2],[-13.2,16,-2],[-13.2,24,-5.5],J1_(-0.25)],12,0xd62828]],'12 AWG'],
+['Fuse F1 → Main switch SW1','pow',[[[[-12.4,14.3,0.2],[-13.4,16,-3],[-12.5,18,-9],[1,21,-12.4],[3.3,21.6,-13.0]],12,0xd62828]],'12 AWG'],
+['Main switch SW1 → Main PCB J1 (+)','pow',[[[[5.1,22.2,-13.0],[6.5,24,-10],[6.5,26.8,-8],[-7,26.8,-7.5],J1_(-0.25)],12,0xd62828]],'12 AWG'],
 ['BMS P− → Main PCB J1 (−)','pow',[[[[-4,13.9,4.4],[-4,15.2,0],[-13.6,18,-3],[-13.6,24.5,-6.5],J1_(0.25)],12,0x1b1b1b]],'12 AWG'],
 ['Main PCB J4 → MDD20A power in (+ / −)','pow',[[[J4_(-0.25),[3.2,27,-7],[12.8,24.5,-6],[12.8,18,0],[8,14.9,3.2]],12,0xd62828],[[J4_(0.25),[3.7,27,-7.2],[13.2,24.5,-6.2],[13.2,18,0.2],[9.6,14.9,3.2]],12,0x1b1b1b]],'12 AWG'],
 ['Main PCB J3 → HP converter input','pow',[[[J3_(-0.25),[-0.3,27.2,-7.8],[-9,22,-8],[-11.8,15.5,-6]],12,0xd62828],[[J3_(0.25),[0.3,27.4,-8],[-8.5,22.2,-8.2],[-11.0,15.5,-6]],12,0x1b1b1b]],'12 AWG'],
 ['5 V buck output → Main PCB J2','pow',[[[[11.8,14.7,-2.4],[13.2,18,-4.5],[13.2,26.8,-6.6],[-3.7,26.8,-6.4],J2_(-0.25)],18,0xf08a24],[[[12.6,14.7,-2.4],[13.6,18,-4.6],[13.6,27.1,-6.8],[-3.3,27.1,-6.6],J2_(0.25)],18,0x1b1b1b]],'18 AWG'],
-['Charging connector → BMS charge terminals','pow',[[[[-6,18,-12.4],[-6,16,-9],[-8,14.5,-2],[-7.8,13.9,8.5]],18,0xf08a24]],'14–18 AWG (TBD with BMS)'],
+['Charging inlet → BMS charge terminals','pow',[[[[-4.2,22,-13.0],[-5,18,-10.5],[-8,14.5,-2],[-7.8,13.9,8.5]],18,0xf08a24]],'14–18 AWG (TBD with BMS)'],
 ['Main PCB J5 → MDD20A control (GND, PWM L, DIR L, PWM R, DIR R)','sig',[0,1,2,3,4].map(i=>[[J5_(0),[10,23,0.5],[1.2,18,4],[2.2,14.4,5.5+i*0.6]],24,[0x1b1b1b,0x2fb344,0xf0d020,0x2e90ff,0x8040c0][i]]),'20–24 AWG'],
 ['MDD20A → Left motor (M+ / M−)','motor',[[[[5.5,14.4,9.8],[13,13.6,11.5],[13.5,9,2],[8.6,7.9,0.4]],14,0xd62828],[[[6.5,14.4,9.8],[13.6,13.7,11.6],[14,9.2,2.2],[8.6,7.6,0.2]],14,0x1b1b1b]],'14 AWG'],
 ['MDD20A → Right motor (M+ / M−)','motor',[[[[8.0,14.4,9.8],[1,13.9,11.6],[-9,12.5,9],[-9,8,2],[-8.6,7.9,0.4]],14,0xd62828],[[[9.5,14.4,9.8],[1.4,14,11.8],[-9.4,12.7,9.2],[-9.4,8.2,2.2],[-8.6,7.6,0.2]],14,0x1b1b1b]],'14 AWG'],
@@ -208,15 +240,15 @@ let ghost=true,flt='all',HLset=null,hlWire=null;
 function setOp(g,op){g.traverse(o=>{if(o.material){const m=o.material;if(m._o===undefined){m._o=m.opacity;m._t=m.transparent}m.transparent=op<1||m._t;m.opacity=op*m._o;m.depthWrite=op>0.5}})}
 function glow(g,h){g.traverse(o=>{if(o.material&&o.material.emissive)o.material.emissive.setHex(h)})}
 function applyView(){ALL.forEach(g=>{const u=g.userData;let op=1;if(flt==='wires')op=0.08;else if(flt!=='all'&&u.grp!==flt)op=0.08;else if(u.grp==='shell'&&ghost)op=0.1;if((HLset||hlWire!==null)&&u.grp!=='shell'&&!(HLset&&HLset.includes(g)))op=Math.min(op,0.22);setOp(g,op)});
- Wg.children.forEach(m=>{const i=m.userData.wire,w=WL[i];m.visible=WCV[w[1]]&&(flt==='all'||flt==='wires');const dim=(hlWire!==null&&hlWire!==i)||HLset;m.material.transparent=!!dim;m.material.opacity=dim?0.18:1;m.material.emissive.setHex(hlWire===i?0x666600:0)});
+ Wg.children.forEach(m=>{const i=m.userData.wire,w=WL[i];m.visible=WCV[w[1]]&&!WOFF[i]&&(flt==='all'||flt==='wires');const dim=(hlWire!==null&&hlWire!==i)||HLset;m.material.transparent=!!dim;m.material.opacity=dim?0.18:1;m.material.emissive.setHex(hlWire===i?0x666600:0)});
  ALL.forEach(g=>glow(g,HLset&&HLset.includes(g)?0x555500:0))}
 // ================= HP SCREEN =================
-const st={x:0,z:0,th:0,wl:0,wr:0,rl:0,rr:0,dist:0,V:11.1,pwm:0.8,v:0,dl:0,dr:0,iL:0,iR:0,ib:0,pw:0,E:0,yaw:0,acc:0};
+const st={x:0,z:0,th:0,wl:0,wr:0,rl:0,rr:0,dist:0,V:11.1,pwm:0.8,v:0,dl:0,dr:0,iL:0,iR:0,ib:0,pw:0,E:0,yaw:0,acc:0,on:true,chg:false,cut:false,soc:0.8,warp:1,Vman:11.1,Ibat:0,Ptot:0,Ich:0};
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();c.fill()}
-function drawScr(){const c=scr.image.getContext('2d'),W=1024,H=640,g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a1a3a');g.addColorStop(1,'#14346e');c.fillStyle=g;c.fillRect(0,0,W,H);
+function drawScr(){const c=scr.image.getContext('2d'),W=1024,H=640;if(!st.on){c.fillStyle='#050608';c.fillRect(0,0,W,H);c.fillStyle='#2a2f38';c.font='bold 44px Arial';c.textAlign='center';c.fillText(st.cut?'BMS CUT-OFF — charge the battery':'OFF',W/2,H/2);scr.needsUpdate=true;return}const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a1a3a');g.addColorStop(1,'#14346e');c.fillStyle=g;c.fillRect(0,0,W,H);
  c.fillStyle='rgba(255,255,255,.12)';c.fillRect(0,0,W,70);c.fillStyle='#fff';c.font='bold 34px Segoe UI,Arial';c.textAlign='left';c.fillText('Educational Smart Robot V1',24,46);c.textAlign='right';c.font='26px Arial';c.fillStyle='#7bd88f';c.fillText('● SIMULATION',W-24,45);
  const rpm=w=>Math.round(w*60/(2*Math.PI)),hd=Math.round(((st.th*180/Math.PI)%360+360)%360);
- const tl=[['Battery',st.V.toFixed(1)+' V','#ffb347'],['Speed',Math.abs(st.v).toFixed(2)+' m/s','#7bd88f'],['Wheel RPM L / R',rpm(st.wl)+' / '+rpm(st.wr),'#6fb7ff'],['PWM L / R',Math.round(st.dl*100)+' / '+Math.round(st.dr*100)+' %','#c9a6ff'],['Heading',hd+'°','#ffd166'],['Distance',(st.dist/100).toFixed(2)+' m','#ff8a8a'],['Motor I (est.)',(st.iL+st.iR).toFixed(1)+' A','#9bd0ff'],['Status',statusShort(),'#7bd88f']];
+ const tl=[['Battery',st.V.toFixed(1)+' V · '+Math.round(st.soc*100)+'%','#ffb347'],['Speed',Math.abs(st.v).toFixed(2)+' m/s','#7bd88f'],['Wheel RPM L / R',rpm(st.wl)+' / '+rpm(st.wr),'#6fb7ff'],['PWM L / R',Math.round(st.dl*100)+' / '+Math.round(st.dr*100)+' %','#c9a6ff'],['Heading',hd+'°','#ffd166'],['Distance',(st.dist/100).toFixed(2)+' m','#ff8a8a'],['Motor I (est.)',(st.iL+st.iR).toFixed(1)+' A','#9bd0ff'],['Status',st.chg?'CHARGING':statusShort(),'#7bd88f']];
  tl.forEach((t,i)=>{const x=24+(i%4)*242,y=100+Math.floor(i/4)*150;c.fillStyle='rgba(255,255,255,.13)';rr(c,x,y,226,130,16);c.fillStyle='#cfd8e6';c.font='24px Arial';c.textAlign='left';c.fillText(t[0],x+16,y+36);c.fillStyle=t[2];c.font='bold 34px Arial';c.fillText(t[1],x+16,y+92)});
  [['Games','#ff7a59'],['Camera','#4cc3a0'],['Drive','#5b9cff'],['Settings','#a98bff']].forEach((b,i)=>{const x=24+i*242,y=430;c.fillStyle=b[1];rr(c,x,y,226,110,18);c.fillStyle='#fff';c.font='bold 34px Arial';c.textAlign='center';c.fillText(b[0],x+113,y+66)});
  c.fillStyle='rgba(255,255,255,.55)';c.font='22px Arial';c.textAlign='center';c.fillText('UI · games · vision · robot dashboard (HP Elite x2)',W/2,600);scr.needsUpdate=true}
@@ -254,7 +286,7 @@ const CP=[
 ['CAM','USB camera',1,'Inside the head (front)','External device with USB to the HP; the position is a design choice.']];
 const tb=document.getElementById('tb');CP.forEach(c=>{const r=document.createElement('tr');r.innerHTML='<td>'+c[1]+'</td><td>'+c[2]+'</td><td>'+c[3]+'</td><td>'+c[4]+'</td>';r.onclick=()=>pickPart(c[0],r);tb.appendChild(r)});
 const wb=document.getElementById('wb');WL.forEach((w,i)=>{const r=document.createElement('tr');r.innerHTML='<td>'+(i+1)+'</td><td>'+w[0]+'</td><td><span class="dot" style="background:'+WCOL[w[1]]+'"></span>'+WNAME[w[1]]+'</td><td>'+w[3]+'</td>';r.onclick=()=>pickWire(i,r);wb.appendChild(r)});
-const NT=['Main PCB: size and exact position are TBD. It is drawn as a shelf above the battery so that the wires stay short; all its connectors (J1–J14) sit on the board edges.',
+const NT=['Power budget: ESP32, HC-SR04, PAM8403 and the motors come with datasheet / README figures; HP, camera, OLED, DHT11 and the MDD20A quiescent current are labelled assumptions or TBD. Measure the real robot with a USB power meter / clamp meter and replace the grey inputs.','Battery simulation uses a generic Li-ion voltage curve (per cell 3.0 V at 0 % → 4.2 V at 100 %) and a pack resistance estimate; the BMS cut-off is assumed at 0 % (≈ 9 V). Use the time-warp slider to watch the battery drain without waiting.','The README says V1 must not run while charging: with the charger plugged in, driving is disabled here.','Main PCB: size and exact position are TBD. It is drawn as a shelf above the battery so that the wires stay short; all its connectors (J1–J14) sit on the board edges.',
 'The README lists F1 and SW1 among the PCB parts but also says they may be in the power system / on a mechanical panel. They are drawn off the PCB; if they are on the PCB, 14–20 A flows through PCB copper (see the power-architecture diagram).',
 'Not defined in the README, so not invented: the 5 V buck converter input feed, the audio source for J11, and whether motor power passes through J6/J7. Here: MDD20A powers the motors directly; J6/J7 carry only the encoders.',
 'Casters are not in the new README. Two are drawn (front + rear) because two drive wheels alone cannot stand.',
@@ -272,32 +304,120 @@ VW.forEach((v,i)=>{const b=document.createElement('button');b.className='bt'+(i?
 document.getElementById('gh').onclick=function(){ghost=!ghost;this.classList.toggle('on',ghost);applyView()};
 document.getElementById('ar').onclick=function(){auto=!auto;this.classList.toggle('on',auto)};
 document.getElementById('sT').oninput=function(){wt=+this.value;document.getElementById('vT').textContent=this.value+'×';buildWires()};
-document.getElementById('sV').oninput=function(){st.V=+this.value;document.getElementById('vV').textContent=this.value+' V'};
+document.getElementById('sV').oninput=function(){st.Vman=+this.value;document.getElementById('vV').textContent=this.value+' V'};
 document.getElementById('sP').oninput=function(){st.pwm=this.value/100;document.getElementById('vP').textContent=this.value+'%'};
 document.getElementById('fl').onclick=function(){follow=!follow;this.classList.toggle('on',follow)};
 document.getElementById('rs').onclick=function(){resetAll()};
 // ================= DRIVE SIM =================
 const key={},btn={t:0,r:0};const KM={ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d',ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r'};
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'){key.u=key.d=key.l=key.r=false;btn.t=btn.r=0;e.preventDefault();return}const k=KM[e.key];if(k){key[k]=true;e.preventDefault()}});
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'){key.u=key.d=key.l=key.r=false;btn.t=btn.r=0;e.preventDefault();return}if(e.key==='p'||e.key==='P'){togglePower();return}if(e.key==='n'||e.key==='N'){nextComp(1);return}if(e.key==='b'||e.key==='B'){nextComp(-1);return}if(e.key==='l'||e.key==='L'){toggleLabels();return}if(e.key==='c'||e.key==='C'){toggleCharge();return}const k=KM[e.key];if(k){key[k]=true;e.preventDefault()}});
 addEventListener('keyup',e=>{const k=KM[e.key];if(k)key[k]=false});
 function hold(id,t,r){const b=document.getElementById(id);b.addEventListener('pointerdown',ev=>{ev.preventDefault();btn.t=t;btn.r=r});['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,()=>{btn.t=0;btn.r=0}))}
 hold('bu',1,0);hold('bd',-1,0);hold('bl',0,1);hold('br',0,-1);document.getElementById('bs').onclick=()=>{key.u=key.d=key.l=key.r=false;btn.t=btn.r=0;st.wl=st.wr=0};
 const gr=new T.GridHelper(1000,100,0x888780,0x888780);gr.material.transparent=true;gr.material.opacity=0.25;S.add(gr);
-const MOT={w0:122*2*Math.PI/60,I0:0.35,Ist:7,Vn:12,GR:90,CPR:1440};MOT.Ra=MOT.Vn/MOT.Ist;MOT.Ke=(MOT.Vn-MOT.I0*MOT.Ra)/MOT.w0;
+const MOT={w0:122*2*Math.PI/60,I0:0.35,Ist:7,Vn:12,GR:90,CPR:1440};MOT.Ra=MOT.Vn/MOT.Ist;MOT.Ke=(MOT.Vn-MOT.I0*MOT.Ra)/MOT.w0;MOT.Kt=3.73/MOT.Ist;
 let tTot=0,tMov=0,vMax=0;const hist=[];
 function resetAll(){st.x=0;st.z=0;st.th=0;st.wl=0;st.wr=0;st.rl=0;st.rr=0;st.dist=0;st.v=0;st.dl=0;st.dr=0;st.iL=0;st.iR=0;st.ib=0;st.pw=0;st.E=0;st.yaw=0;st.acc=0;tTot=0;tMov=0;vMax=0;hist.length=0}
-function step(dt){const t=Math.max(-1,Math.min(1,(key.u?1:0)-(key.d?1:0)+btn.t)),r=Math.max(-1,Math.min(1,(key.l?1:0)-(key.r?1:0)+btn.r));
+function step(dt){const ok=(st.on&&!st.chg)?1:0;const t=ok*Math.max(-1,Math.min(1,(key.u?1:0)-(key.d?1:0)+btn.t+vrD.t)),r=ok*Math.max(-1,Math.min(1,(key.l?1:0)-(key.r?1:0)+btn.r+vrD.r));
  const wmax=MOT.w0*(st.V/12),cl=Math.max(-1,Math.min(1,t-r)),cr=Math.max(-1,Math.min(1,t+r)),a=1-Math.exp(-dt/0.3);
  st.dl=cl*st.pwm;st.dr=cr*st.pwm;st.wl+=(st.dl*wmax-st.wl)*a;st.wr+=(st.dr*wmax-st.wr)*a;
  const v=R*(st.wl+st.wr)/2,yaw=R*(st.wr-st.wl)/(2*PX),vn=v/100;
  st.th+=yaw*dt;st.x+=v*Math.sin(st.th)*dt;st.z+=v*Math.cos(st.th)*dt;st.dist+=Math.abs(v)*dt;st.rl+=st.wl*dt/(2*Math.PI);st.rr+=st.wr*dt/(2*Math.PI);
  st.acc+=(((vn-st.v)/Math.max(dt,1e-3))-st.acc)*0.15;st.v=vn;st.yaw=yaw;
- const lim=st.V/MOT.Ra;st.iL=Math.min(Math.abs(st.dl*st.V-MOT.Ke*st.wl)/MOT.Ra,lim);st.iR=Math.min(Math.abs(st.dr*st.V-MOT.Ke*st.wr)/MOT.Ra,lim);
- st.ib=Math.abs(st.dl)*st.iL+Math.abs(st.dr)*st.iR;st.pw=st.V*st.ib;st.E+=st.pw*dt/3600;
+ const lim=st.V/MOT.Ra,lI=massKg()*9.81*CFG.crr*(R/100)/2/MOT.Kt;
+ st.iL=Math.min(Math.abs(st.dl*st.V-MOT.Ke*st.wl)/MOT.Ra+(Math.abs(st.wl)>0.05?lI:0),lim);st.iR=Math.min(Math.abs(st.dr*st.V-MOT.Ke*st.wr)/MOT.Ra+(Math.abs(st.wr)>0.05?lI:0),lim);
+ st.ib=Math.abs(st.dl)*st.iL+Math.abs(st.dr)*st.iR;st.pw=st.V*st.ib/CFG.etaDrv;st.E+=st.pw*dt/3600;battStep(dt);
  tTot+=dt;if(Math.abs(vn)>0.02)tMov+=dt;vMax=Math.max(vMax,Math.abs(vn));
  Rb.position.set(st.x,0,st.z);Rb.rotation.y=st.th;WH.forEach(w=>{w.g.rotation.x+=(w.s>0?st.wl:st.wr)*dt});gr.position.set(Math.round(st.x/10)*10,0,Math.round(st.z/10)*10)}
 function statusLong(){const v=st.v,y=st.yaw;if(Math.abs(v)<0.02&&Math.abs(y)<0.05)return'STOPPED';if(Math.abs(v)<0.02)return'PIVOT '+(y>0?'LEFT':'RIGHT');return(v>0?'FORWARD':'REVERSE')+(Math.abs(y)>0.08?(y>0?' · LEFT':' · RIGHT'):'')}
 function statusShort(){const v=st.v,y=st.yaw;if(Math.abs(v)<0.02&&Math.abs(y)<0.05)return'STOP';if(Math.abs(v)<0.02)return y>0?'PIVOT L':'PIVOT R';return(v>0?'FWD':'REV')+(Math.abs(y)>0.08?(y>0?' L':' R'):'')}
+// ================= POWER / WEIGHT CALCULATOR =================
+const CURVE=[[0,3.0],[0.05,3.3],[0.1,3.45],[0.2,3.58],[0.3,3.66],[0.4,3.72],[0.5,3.79],[0.6,3.87],[0.7,3.96],[0.8,4.05],[0.9,4.13],[1,4.2]];
+function vCell(x){for(let i=1;i<CURVE.length;i++){if(x<=CURVE[i][0]){const a=CURVE[i-1],b=CURVE[i];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])}}return 4.2}
+const EL=[
+{id:'esp',n:'ESP32-DEVKITC-32D',rail:'5V',V:5,it:0.13,ip:0.6,k:null,src:'Measured on a DOIT DevKit: average ≈130 mA with 0.6 A spikes (Wi-Fi scan), ≈50 mA with Wi-Fi off; Wi-Fi TX peak ≈240 mA in datasheet-class tables'},
+{id:'hc',n:'HC-SR04',rail:'5V',V:5,it:0.015,ip:0.015,k:'hc',src:'Datasheet: working current 15 mA, quiescent < 2 mA'},
+{id:'dht',n:'DHT11',rail:'5V',V:5,it:0.0005,ip:0.0025,k:'dht',src:'Typical datasheet class (≈0.5 mA measuring, 2.5 mA max): VERIFY'},
+{id:'ol',n:'0.91" I2C OLED',rail:'5V',V:3.3,it:0.01,ip:0.02,k:'ol',src:'Assumption (≈10 mA typical, 20 mA all pixels on). Fed from the ESP32 3V3 LDO: counts 1:1 on the 5 V rail'},
+{id:'led',n:'Status LEDs ×2',rail:'5V',V:3.3,it:0.012,ip:0.012,k:'led',src:'Calculated: (3.3 V − Vf) / 220 Ω ≈ 6 mA each; LED type TBD'},
+{id:'pam',n:'PAM8403 + 2 speakers',rail:'5V',V:5,it:0.10,ip:1.35,k:'aud',src:'Datasheet: 3 W / channel into 4 Ω at 5 V, efficiency up to 90 % → ≈1.3 A peak; typical listening level is an assumption'},
+{id:'cam',n:'USB camera (via HP)',rail:'PD',V:5,it:0.2,ip:0.5,k:'cam',src:'Assumption: USB 2.0 bus-powered, limit 500 mA; drawn from the HP'},
+{id:'hp',n:'HP Elite x2',rail:'PD',V:20,it:0,ip:0,k:'hp',ro:1,src:'Assumption: typical / peak watts set below (HP family adapter is 45 W; README target ≥ 65 W). Measure on the real unit'},
+{id:'mdd',n:'MDD20A (quiescent)',rail:'BAT',V:11.1,it:0.02,ip:0.02,k:null,src:'TBD — VERIFY WITH DATASHEET (not found in the sources I checked; 20 mA assumed)'}];
+const rowI=(r,mode)=>{let a=r.it,b=r.ip;if(r.id==='hp'){a=CFG.hpTyp/20;b=CFG.hpPeak/20}if(mode==='peak')return b;if(mode==='heavy'&&(r.id==='esp'||r.id==='pam'||r.id==='hp'))return a+0.5*(b-a);return a};
+const incl=r=>r.k?INC[r.k]!==false:true;
+function motorCruise(v){const m=massKg(),Rw=R/100,F=m*9.81*(CFG.crr+Math.sin(CFG.slope*Math.PI/180)),T=F*Rw/2,I=MOT.I0+T/MOT.Kt,w=v/Rw,Ve=MOT.Ke*w+I*MOT.Ra;return{I:I,Pin:2*Ve*I/CFG.etaDrv,Ve:Ve}}
+function motorsBat(mode,V){if(mode==='idle')return 0;if(mode==='peak')return 2*V*V/MOT.Ra;const c=motorCruise(CFG.cruise).Pin;return mode==='typ'?c*CFG.tMovTyp:c*CFG.tMovHeavy*1.3}
+function loads(mode,V){let pb=0;const rows=[];EL.forEach(r=>{if(!incl(r))return;const I=rowI(r,mode),P=r.V*I;const Pb=r.rail==='5V'?P/CFG.etaBuck:(r.rail==='PD'?P/CFG.etaPD:P);pb+=Pb;rows.push({r:r,I:I,P:P,Pb:Pb})});const pm=motorsBat(mode,V);return{rows:rows,pnm:pb,pm:pm,tot:pb+pm}}
+const packAh=()=>CFG.P*CFG.cellAh,packWh=()=>CFG.S*3.7*packAh();
+function battStep(dt){const Ah=packAh();let Pt=0;if(st.on)Pt=loads('idle',st.V).pnm+st.pw;const Rint=CFG.S*0.04/CFG.P+0.03,Ib=Pt/Math.max(st.V,6),dS=dt*st.warp;let Ich=0;
+ if(st.chg){Ich=st.soc<0.9?5:Math.max(0,5*(1-st.soc)/0.1);st.soc=Math.min(1,st.soc+((Ich*0.95-Ib)*dS/3600)/Ah);if(st.cut&&st.soc>0.05)st.cut=false}
+ else if(st.on){st.soc-=Ib*dS/3600/Ah;if(st.soc<=0){st.soc=0;st.on=false;st.cut=true;syncBtns()}}
+ st.Ibat=Ib;st.Ptot=Pt;st.Ich=Ich;const Voc=CFG.S*vCell(st.soc);st.V=document.getElementById('mv').checked?st.Vman:Math.max(6,Voc-(st.on?Ib*Rint:0)+(st.chg?Ich*Rint:0))}
+const SHELL_AREA=11300;
+const packG=()=>CFG.S*CFG.P*CFG.cellG*1.08,shellG=()=>SHELL_AREA*(CFG.shellT/10)*1.24*CFG.fill;
+const WT=[
+{n:'HP Elite x2 tablet',g:830,ref:'HP',k:'hp',b:'your note (830 g)'},{n:'GB37Y3530 motors ×2 (with encoder)',g:410,ref:'MOTORS',b:'≈205 g each (vendor listing)'},
+{n:'Ø150 mm wheels ×2',g:600,ref:'WHEELS',b:'assumption (300 g each)'},{n:'Casters ×2',g:120,ref:'CASTERS',b:'assumption'},{n:'Chassis plates, brackets, standoffs',g:1500,ref:'CHASSIS',b:'assumption'},
+{n:'3D-printed shell (head, body, arms)',calc:shellG,ref:'SHELL',b:'area ≈ 1.13 m² × wall × 1.24 g/cm³ × fill (set in inputs)'},{n:'Back panel',g:100,ref:'PANEL',b:'assumption'},
+{n:'Li-ion pack (cells + wrap)',calc:packG,ref:'BAT',b:'cells × weight × 1.08 (nickel strip, wrap)'},{n:'3S BMS',g:25,ref:'BMS',b:'assumption'},{n:'Fuse + holder',g:20,ref:'FUSE',b:'assumption'},{n:'Main switch',g:25,ref:'SW',b:'assumption'},{n:'Charging inlet',g:20,ref:'CHG',b:'assumption'},
+{n:'Cytron MDD20A',g:90,ref:'MDD',b:'sources list ≈ 70–100 g'},{n:'5 V / 5 A buck converter',g:30,ref:'BUCK',b:'assumption'},{n:'HP USB-C PD converter',g:40,ref:'HPCONV',k:'hp',b:'assumption'},
+{n:'ESP32-DEVKITC-32D',g:12,ref:'ESP32',b:'assumption'},{n:'PAM8403 module',g:4,ref:'PAM',k:'aud',b:'assumption'},{n:'Main PCB V1',g:90,ref:'PCB',b:'assumption (size TBD)'},{n:'Passives, LEDs',g:5,ref:'PASSIVES',k:'led',b:'assumption'},
+{n:'HC-SR04',g:9,ref:'HCSR04',k:'hc',b:'vendor listing ≈ 10 g'},{n:'DHT11',g:3,ref:'DHT11',k:'dht',b:'assumption'},{n:'0.91" OLED',g:5,ref:'OLED',k:'ol',b:'assumption'},
+{n:'Speaker L',g:40,ref:'SPKL',k:'aud',b:'assumption'},{n:'Speaker R',g:40,ref:'SPKR',k:'aud',b:'assumption'},{n:'USB camera',g:45,ref:'CAM',k:'cam',b:'assumption'},
+{n:'Wires and connectors',g:350,ref:null,b:'assumption'},{n:'Screws, nuts, fasteners',g:150,ref:null,b:'assumption'}];
+const wInc=w=>w.k?INC[w.k]!==false:true,wVal=w=>w.calc?w.calc():w.g;
+function massKg(){let m=0;WT.forEach(w=>{if(wInc(w))m+=wVal(w)});return m/1000}
+function tmpRoot(fn){const sp=Rb.position.clone(),sr=Rb.rotation.y;Rb.position.set(0,0,0);Rb.rotation.y=0;Rb.updateMatrixWorld(true);const r=fn();Rb.position.copy(sp);Rb.rotation.y=sr;Rb.updateMatrixWorld(true);return r}
+function lc(ref){if(lcCache[ref])return lcCache[ref];const g=ALL.find(a=>a.userData.ref===ref);if(!g)return[0,18,0];const c=tmpRoot(()=>new T.Box3().setFromObject(g).getCenter(new T.Vector3()));return lcCache[ref]=[c.x,c.y,c.z]}
+function dims(){const b=tmpRoot(()=>{const bb=new T.Box3();ALL.forEach(g=>{if(g.visible)bb.expandByObject(g)});return bb});const s=b.getSize(new T.Vector3());return{L:s.z,W:s.x,H:s.y}}
+function cog(){let M=0,x=0,y=0,z=0;WT.forEach(w=>{if(!wInc(w))return;const m=wVal(w),c=w.ref?lc(w.ref):[0,18,0];M+=m;x+=m*c[0];y+=m*c[1];z+=m*c[2]});return{M:M,x:x/M,y:y/M,z:z/M}}
+function stab(c){const a=PX,b=9,d=(1-Math.abs(c.x)/a-Math.abs(c.z)/b)/Math.sqrt(1/(a*a)+1/(b*b));return{d:d,ang:Math.atan2(d,c.y)*180/Math.PI}}
+const tilesHTML=a=>a.map(t=>'<div class="tl'+(t[3]?' est':'')+'"><span>'+t[0]+'</span><b>'+t[1]+'</b><small>'+t[2]+'</small></div>').join('');
+const f2=(x,d)=>(+x).toFixed(d===undefined?2:d);
+function renderEL(){const eb=document.getElementById('elb');let h='';const Vn=CFG.S*3.7;
+ EL.forEach(r=>{const on=incl(r),I1=rowI(r,'typ'),I2=rowI(r,'peak'),P1=r.V*I1,P2=r.V*I2,Pb=r.rail==='5V'?P1/CFG.etaBuck:(r.rail==='PD'?P1/CFG.etaPD:P1);
+  const ci=r.k?'<input type="checkbox" data-inc="'+r.k+'"'+(INC[r.k]!==false?' checked':'')+'>':'';
+  const inp=(f,v)=>r.ro?f2(v,3):'<input type="number" step="0.001" min="0" data-id="'+r.id+'" data-f="'+f+'" value="'+v+'">';
+  h+='<tr'+(on?'':' style="opacity:.4"')+'><td>'+ci+'</td><td>'+r.n+'</td><td>'+r.rail+'</td><td>'+r.V+'</td><td>'+inp('it',r.id==='hp'?I1:r.it)+'</td><td>'+inp('ip',r.id==='hp'?I2:r.ip)+'</td><td>'+f2(P1)+'</td><td>'+f2(P2)+'</td><td>'+f2(on?Pb:0)+'</td><td class="sc">'+r.src+'</td></tr>'});
+ const mc=motorCruise(CFG.cruise);h+='<tr><td></td><td><b>2 × GB37Y3530 motors</b></td><td>BAT (PWM)</td><td>0–'+f2(Vn,1)+'</td><td>'+f2(mc.I)+' each @ '+CFG.cruise+' m/s</td><td>'+f2(Vn/MOT.Ra)+' each (stall)</td><td>'+f2(mc.Pin)+'</td><td>'+f2(2*Vn*Vn/MOT.Ra)+'</td><td>'+f2(motorsBat('typ',Vn))+'</td><td class="sc">README: no-load 0.35 A, stall ≈7 A, 12 V. Cruise current = no-load + load torque/Kt; load = mass × g × rolling coefficient (assumption). Typical = moving '+Math.round(CFG.tMovTyp*100)+' % of the time</td></tr>';
+ eb.innerHTML=h;
+ const rows=[['Idle (HP + electronics, robot not moving)','idle'],['Typical (moving '+Math.round(CFG.tMovTyp*100)+' % of the time)','typ'],['Heavy (moving '+Math.round(CFG.tMovHeavy*100)+' %, HP / audio busier)','heavy'],['Peak (both motors stalled + peak loads)','peak']];
+ document.getElementById('elf').innerHTML=rows.map(a=>{const L=loads(a[1],a[1]==='peak'?CFG.S*4.2:Vn);return'<tr style="font-weight:600"><td></td><td colspan="7">'+a[0]+'</td><td>'+f2(L.tot,1)+' W</td><td class="sc">≈ '+f2(L.tot/Vn,1)+' A at '+f2(Vn,1)+' V · '+f2(L.tot/(CFG.S*3.0),1)+' A at 9 V</td></tr>'}).join('');
+ eb.querySelectorAll('input').forEach(i=>{i.onchange=()=>{if(i.dataset.inc){INC[i.dataset.inc]=i.checked}else{const r=EL.find(x=>x.id===i.dataset.id);r[i.dataset.f]=Math.max(0,+i.value)}refreshAll()}})}
+function renderRes(){const Vn=CFG.S*3.7,Vlo=CFG.S*3.0,Vhi=CFG.S*4.2,L={idle:loads('idle',Vn),typ:loads('typ',Vn),heavy:loads('heavy',Vn)};const pk=loads('peak',Vn);
+ const Ipk=Math.max(pk.pnm/Vlo+2*Vlo/MOT.Ra,pk.pnm/Vhi+2*Vhi/MOT.Ra),Wh=packWh(),us=Wh*CFG.usable,rt=m=>us/L[m].tot;
+ const reqAh=L.typ.tot*CFG.targetH/(Vn*CFG.usable),Prec=Math.max(1,Math.ceil(reqAh/CFG.cellAh)),cellLim=CFG.P*CFG.cellImax,w=CFG.P*1.86+0.4,hh=CFG.S*1.86+0.4;
+ const chk=(v,lim,nm)=>v<=lim?'<span class="ok">OK</span> ≤ '+nm+' '+lim+' A':'<span class="bad">⚠ &gt; '+nm+' '+lim+' A</span>';
+ document.getElementById('bres').innerHTML=tilesHTML([['Battery pack','3S'+CFG.P+'P · '+f2(packAh(),1)+' Ah · '+f2(Wh,0)+' Wh','',0],['Usable energy ('+Math.round(CFG.usable*100)+' %)',f2(us,0),'Wh',0],
+ ['Runtime — idle',f2(rt('idle'),1),'h',1],['Runtime — typical',f2(rt('typ'),1),'h',1],['Runtime — heavy',f2(rt('heavy'),1),'h',1],
+ ['Average load — typical',f2(L.typ.tot,1),'W',1],['Needed for '+CFG.targetH+' h typical',f2(reqAh,1)+' Ah → '+Prec+'P ('+(CFG.S*Prec)+' cells)','',1],
+ ['Peak current (worst of 9 V / 12.6 V)',f2(Ipk,1),'A',1],['vs fuse 25 A (README)',chk(Ipk,25,'fuse'),'',0],['vs BMS 30 A',chk(Ipk,30,'BMS'),'',0],['vs cells ('+CFG.P+'P × '+CFG.cellImax+' A)',chk(Ipk,cellLim,'cells'),'',0],
+ ['Pack size (cells Ø18.6 × 65 mm)',f2(w,1)+' × '+f2(hh,1)+' × 6.9','cm',1],['Fits battery bay 16 × 11 × 12 cm?',w<=16?'<span class="ok">yes</span>':'<span class="bad">no — redesign bay</span>','',0],['Full charge 0 → 100 %','≈ '+f2(packAh()/5*1.25,1),'h at 5 A',1]]);
+ window._prec=Prec}
+function renderWT(){let h='';WT.forEach((w,i)=>{const on=wInc(w);h+='<tr'+(on?'':' style="opacity:.4"')+'><td>'+w.n+'</td><td>'+(w.calc?f2(wVal(w),0):'<input type="number" min="0" data-w="'+i+'" value="'+w.g+'">')+'</td><td class="sc">'+w.b+'</td></tr>'});
+ const wb=document.getElementById('wtb');wb.innerHTML=h;wb.querySelectorAll('input').forEach(i=>{i.onchange=()=>{WT[+i.dataset.w].g=Math.max(0,+i.value);refreshAll()}});
+ const c=cog(),d=dims(),sb=stab(c),M=c.M/1000;
+ document.getElementById('wres').innerHTML=tilesHTML([['Total weight',f2(M,2),'kg',1],['README estimate','≈ 12','kg',0],['Length (front–back)',f2(d.L,1),'cm',0],['Width (incl. wheels, arms)',f2(d.W,1),'cm',0],['Height',f2(d.H,1),'cm',0],
+ ['Centre of gravity height',f2(c.y,1),'cm',1],['CoG offset x / z',f2(c.x,1)+' / '+f2(c.z,1),'cm',1],['Distance inside support area',sb.d>0?'<span class="ok">'+f2(sb.d,1)+'</span>':'<span class="bad">outside</span>','cm',1],['Static tip-over angle',sb.d>0?f2(sb.ang,1):'—','°',1],['Battery share of weight',f2(packG()/c.M*100,0),'%',1]]);}
+function applyInclude(){const map={hc:['HCSR04'],dht:['DHT11'],ol:['OLED'],aud:['PAM','SPKL','SPKR'],cam:['CAM'],hp:['HP','HPCONV']};
+ Object.keys(map).forEach(k=>map[k].forEach(ref=>{const g=ALL.find(a=>a.userData.ref===ref);if(g)g.visible=INC[k]!==false}));
+ WOFF=WL.map(w=>{const n=w[0];return(INC.hc===false&&n.indexOf('HC-SR04')>=0)||(INC.dht===false&&n.indexOf('DHT11')>=0)||(INC.ol===false&&n.indexOf('OLED')>=0)||(INC.aud===false&&n.indexOf('speaker')>=0)||(INC.cam===false&&n.indexOf('USB camera')>=0)||(INC.hp===false&&(n.indexOf('HP')>=0))});applyView()}
+let lastP=CFG.P;
+function refreshAll(){if(CFG.P!==lastP){buildBattery();lastP=CFG.P}applyInclude();renderEL();renderRes();renderWT();syncBtns()}
+const CF=[['P','Cells in parallel (P)',1,1,0],['cellAh','Cell capacity (Ah)',0.1,0.5,0],['cellG','Cell weight (g)',1,10,0],['cellImax','Cell max continuous discharge (A)',1,1,0],['usable','Usable capacity (%)',1,30,1],['etaBuck','5 V buck efficiency (%)',1,50,1],['etaPD','PD converter efficiency (%)',1,50,1],['etaDrv','Motor-driver efficiency (%)',1,50,1],['hpTyp','HP typical power (W)',1,1,0],['hpPeak','HP peak power (W)',1,1,0],['cruise','Cruise speed (m/s)',0.05,0.1,0],['crr','Rolling resistance coeff.',0.005,0,0],['slope','Slope (°)',1,0,0],['targetH','Target runtime (h)',0.5,0.5,0],['tMovTyp','Moving time — typical (%)',5,0,1],['tMovHeavy','Moving time — heavy (%)',5,0,1],['shellT','Shell wall (mm)',0.5,1,0],['fill','Shell fill factor (%)',5,10,1]];
+document.getElementById('bset').innerHTML=CF.map(f=>'<label class="fld">'+f[1]+'<input type="number" step="'+f[2]+'" min="'+f[3]+'" data-c="'+f[0]+'" value="'+(f[4]?Math.round(CFG[f[0]]*100):CFG[f[0]])+'"></label>').join('');
+document.getElementById('bset').querySelectorAll('input').forEach(i=>{i.onchange=()=>{const f=CF.find(x=>x[0]===i.dataset.c);CFG[f[0]]=f[4]?(+i.value)/100:(+i.value);refreshAll()}});
+function setCfgInputs(){document.getElementById('bset').querySelectorAll('input').forEach(i=>{const f=CF.find(x=>x[0]===i.dataset.c);i.value=f[4]?Math.round(CFG[f[0]]*100):CFG[f[0]]})}
+document.getElementById('apr').onclick=()=>{CFG.P=window._prec||CFG.P;setCfgInputs();refreshAll()};
+document.getElementById('rdf').onclick=()=>{Object.assign(CFG,JSON.parse(JSON.stringify(CFG0)));setCfgInputs();refreshAll()};
+// power / charger controls
+function syncBtns(){const pb=document.getElementById('pwrb'),cb=document.getElementById('chgb');pb.textContent='Power: '+(st.on?'ON':(st.cut?'OFF (BMS cut-off)':'OFF'));pb.classList.toggle('on',st.on);cb.textContent='Charger: '+(st.chg?'plugged (12.6 V / 5 A)':'unplugged');cb.classList.toggle('on',st.chg);swK.rotation.x=st.on?-0.3:0.3;plug.visible=st.chg}
+function togglePower(){if(st.cut&&st.soc<=0.02)return;st.on=!st.on;if(st.on)st.cut=false;syncBtns()}
+function toggleCharge(){st.chg=!st.chg;syncBtns()}
+document.getElementById('pwrb').onclick=togglePower;document.getElementById('chgb').onclick=toggleCharge;
+document.getElementById('sS').oninput=function(){st.soc=this.value/100;if(st.soc>0.02)st.cut=false};
+const WARP=[1,10,60,600];document.getElementById('sW').oninput=function(){st.warp=WARP[+this.value];document.getElementById('vW').textContent='×'+st.warp};
 // ---- telemetry tiles
 const rpmOf=w=>w*60/(2*Math.PI);
 const TL=[['spd','Speed','m/s',()=>st.v.toFixed(2),0],['kmh','Speed','km/h',()=>(st.v*3.6).toFixed(2),0],['rl','Wheel RPM — left','rpm',()=>rpmOf(st.wl).toFixed(0),0],['rr','Wheel RPM — right','rpm',()=>rpmOf(st.wr).toFixed(0),0],
@@ -313,7 +433,7 @@ const TL=[['spd','Speed','m/s',()=>st.v.toFixed(2),0],['kmh','Speed','km/h',()=>
 ['mx','Max speed reached','m/s',()=>vMax.toFixed(2),0],['tm','Time moving / total','s',()=>tMov.toFixed(1)+' / '+tTot.toFixed(1),0],
 ['sv','Battery voltage (set)','V',()=>st.V.toFixed(1),0],['mxv','Theoretical max speed','m/s',()=>(R*MOT.w0*(st.V/12)/100).toFixed(2),0],
 ['il','Motor current — left','A',()=>st.iL.toFixed(1),1],['ir','Motor current — right','A',()=>st.iR.toFixed(1),1],['ib','Battery current (motors)','A',()=>st.ib.toFixed(1),1],
-['pw','Motor power from battery','W',()=>st.pw.toFixed(0),1],['en','Energy used (motors)','Wh',()=>st.E.toFixed(2),1],['stt','Status','',()=>statusLong(),0]];
+['pw','Motor power from battery','W',()=>st.pw.toFixed(0),1],['en','Energy used (motors)','Wh',()=>st.E.toFixed(2),1],['soc','Battery charge (SoC)','%',()=>(st.soc*100).toFixed(1),0],['vp','Pack voltage','V',()=>st.V.toFixed(2),0],['ibt','Battery current (all loads)','A',()=>st.Ibat.toFixed(1),1],['ptt','Total power from battery','W',()=>st.Ptot.toFixed(0),1],['rem','Time left at this load','h',()=>st.Ibat>0.05?(st.soc*packAh()/st.Ibat).toFixed(1):'—',1],['stt','Status','',()=>(st.cut?'BMS CUT-OFF':(st.chg?'CHARGING':(st.on?statusLong():'POWER OFF'))),0]];
 const tilesEl=document.getElementById('tiles');const TLV={};TL.forEach(t=>{const d=document.createElement('div');d.className='tl'+(t[4]?' est':'');d.innerHTML='<span>'+t[1]+(t[4]?' (est.)':'')+'</span><b>0</b><small>'+t[2]+'</small>';tilesEl.appendChild(d);TLV[t[0]]=d.querySelector('b')});
 // ---- charts
 const HLEN=300;let hAcc=0;
@@ -332,18 +452,105 @@ function tele(dt){hAcc+=dt;if(hAcc<0.1)return;hAcc=0;hist.push({v:st.v,l:rpmOf(s
 // ================= INTERACTION =================
 function upd(){const tx=(follow?Rb.position.x:0)+OFF.x,ty=OFF.y,tz=(follow?Rb.position.z:0)+OFF.z;cam.position.set(tx+rad*Math.sin(ph)*Math.sin(th),ty+rad*Math.cos(ph),tz+rad*Math.sin(ph)*Math.cos(th));cam.lookAt(tx,ty,tz)}
 cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;mvd=0;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
-cv.addEventListener('pointerup',e=>{drag=false;cv.style.cursor='grab';if(mvd<4){const h=hitAt(e);if(h&&h.wire!==undefined)pickWire(h.wire,null,false);else if(h&&h.ref)pickPart(h.ref,null,false);else{HLset=null;hlWire=null;clearRows();info.textContent='Click any part or wire';applyView()}}});
+cv.addEventListener('pointerup',e=>{drag=false;cv.style.cursor='grab';if(mvd<4){const h=hitAt(e);if(h&&h.wire!==undefined)pickWire(h.wire,null,false);else if(h&&h.ref){pickPart(h.ref,null,false);if(h.ref==='SW')togglePower();if(h.ref==='CHG')toggleCharge()}else{HLset=null;hlWire=null;clearRows();info.textContent='Click any part or wire';applyView()}}});
 const rc=new T.Raycaster(),m2=new T.Vector2();
-function hitAt(e){const r=cv.getBoundingClientRect();m2.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);rc.setFromCamera(m2,cam);const hs=rc.intersectObjects(Rb.children,true);
+function hitAt(e){const r=cv.getBoundingClientRect();m2.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);rc.setFromCamera(m2,cam);return scan()}
+function scan(){const hs=rc.intersectObjects(Rb.children,true);
  for(const h of hs){if(!h.object.visible||(h.object.material&&h.object.material.opacity<0.3))continue;let o=h.object;while(o){if(o.userData&&o.userData.wire!==undefined)return{wire:o.userData.wire};if(o.userData&&o.userData.ref&&o.userData.grp!=='shell')return{ref:o.userData.ref};o=o.parent}}return null}
-cv.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-lx,dy=e.clientY-ly;mvd+=Math.abs(dx)+Math.abs(dy);th-=dx*0.008;ph=Math.min(3.1,Math.max(0.02,ph-dy*0.008));tt=th;tp=ph;lx=e.clientX;ly=e.clientY;return}
+cv.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-lx,dy=e.clientY-ly;mvd+=Math.abs(dx)+Math.abs(dy);if(preview&&vrMode==='card'){pYaw-=dx*0.005;pPitch=Math.max(-1.4,Math.min(1.4,pPitch-dy*0.005))}th-=dx*0.008;ph=Math.min(3.1,Math.max(0.02,ph-dy*0.008));tt=th;tp=ph;lx=e.clientX;ly=e.clientY;return}
  const h=hitAt(e);if(h){tip.textContent=h.wire!==undefined?WL[h.wire][0]:(ALL.find(x=>x.userData.ref===h.ref).userData.name);tip.style.display='block'}else tip.style.display='none'});
 cv.addEventListener('wheel',e=>{e.preventDefault();rad=Math.min(500,Math.max(15,rad+e.deltaY*0.25));tr=rad},{passive:false});
 let pd=0;cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pd){rad=Math.min(500,Math.max(15,rad-(d-pd)*0.8));tr=rad}pd=d}},{passive:true});cv.addEventListener('touchend',()=>{pd=0});
-buildWires();applyView();
+// ================= VR (WebXR headset + Cardboard) =================
+let vrMode=null,preview=false,pYaw=0,pPitch=0;const vrD={t:0,r:0};const vrmsg=document.getElementById('vrmsg'),vrb=document.getElementById('vrb'),cbb=document.getElementById('cbb');
+function msg(t){vrmsg.textContent=t}
+const tm=new T.Matrix4(),panelCv=document.createElement('canvas');panelCv.width=1024;panelCv.height=512;const panelTex=new T.CanvasTexture(panelCv);
+const panel=new T.Mesh(new T.PlaneGeometry(0.34,0.17),new T.MeshBasicMaterial({map:panelTex,transparent:true}));panel.position.set(0,0.07,-0.12);panel.rotation.x=-0.9;panel.visible=false;
+function pickRay(c){tm.identity().extractRotation(c.matrixWorld);rc.ray.origin.setFromMatrixPosition(c.matrixWorld);rc.ray.direction.set(0,0,-1).applyMatrix4(tm);if(compPanel.visible){const ph=rc.intersectObject(compPanel,false)[0];if(ph&&ph.uv){compPick(ph.uv);return}}const h=scan();
+ if(h&&h.wire!==undefined)pickWire(h.wire,null,false);else if(h&&h.ref){pickPart(h.ref,null,false);if(h.ref==='SW')togglePower();if(h.ref==='CHG')toggleCharge()}else{HLset=null;hlWire=null;clearRows();info.textContent='Click any part or wire';applyView()}}
+const ctrl=[0,1].map(i=>{const c=R_.xr.getController(i);rig.add(c);
+ c.add(new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(0,0,0),new T.Vector3(0,0,-3)]),new T.LineBasicMaterial({color:0xffaa33})));
+ const bd=new T.Mesh(new T.BoxGeometry(0.04,0.04,0.11),new T.MeshStandardMaterial({color:0x2b2f36,roughness:.5}));bd.position.z=0.03;c.add(bd);
+ c.addEventListener('selectstart',()=>pickRay(c));c.addEventListener('squeezestart',()=>resetAll());
+ c.addEventListener('connected',e=>{if(e.data&&e.data.handedness==='left')c.add(panel)});return c});
+ctrl[0].add(panel);
+// ================= COMPONENT GUIDE (labels + board + tour) =================
+let showLabels=false,compSel=0,touring=false,tourT=0,labBuilt=false;const labG=new T.Group();Rb.add(labG);labG.visible=false;const labSp=[];
+const SHORT=['HP Elite x2','ESP32 (U1)','PAM8403 (U2)','Main PCB','R · C · LED','MDD20A driver','Motors ×2','Encoders ×2','Wheels Ø150','Casters ×2','Battery 3S','BMS 3S 30A','Fuse 25 A','Power switch','Charge inlet','5 V buck','HP PD conv.','HC-SR04','DHT11','OLED','Speaker L','Speaker R','USB camera'];
+function labelSprite(n,txt){const c=document.createElement('canvas');c.width=512;c.height=96;const g=c.getContext('2d');g.fillStyle='rgba(12,22,44,.9)';rr(g,0,0,512,96,20);g.fillStyle='#ffd27a';g.font='bold 46px Arial';g.textAlign='left';g.fillText(String(n),18,66);g.fillStyle='#ffffff';g.font='bold 36px Arial';g.fillText(txt,86,64);const t=new T.CanvasTexture(c);const sp=new T.Sprite(new T.SpriteMaterial({map:t,depthTest:false,transparent:true}));sp.scale.set(15,2.8,1);sp.renderOrder=10;return sp}
+function buildLabels(){if(labBuilt)return;labBuilt=true;const items=CP.map((c,i)=>{const p=lc(c[0]);return{i:i,p:p,side:p[0]>2?1:(p[0]<-2?-1:(i%2?1:-1))}});
+ [-1,1].forEach(sd=>{const a=items.filter(x=>x.side===sd).sort((x,y)=>x.p[1]-y.p[1]);let last=-1e9;a.forEach(x=>{x.ly=Math.max(x.p[1],last+3.4);last=x.ly});
+  a.forEach(x=>{const lp=[sd*38,x.ly,0],sp=labelSprite(x.i+1,SHORT[x.i]||CP[x.i][1]);sp.position.set(lp[0],lp[1],lp[2]);labG.add(sp);labSp.push(sp);
+   const ln=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(x.p[0],x.p[1],x.p[2]),new T.Vector3(lp[0]-sd*6,lp[1],lp[2])]),new T.LineBasicMaterial({color:0xffd27a,depthTest:false,transparent:true,opacity:0.8}));ln.renderOrder=9;labG.add(ln)})})}
+function setLabels(){buildLabels();labG.visible=showLabels;const b=document.getElementById('lbb');if(b)b.classList.toggle('on',showLabels)}
+function toggleLabels(){showLabels=!showLabels;setLabels()}
+document.getElementById('lbb').onclick=toggleLabels;
+const cpCv=document.createElement('canvas');cpCv.width=1024;cpCv.height=900;const cpTex=new T.CanvasTexture(cpCv);
+const compPanel=new T.Mesh(new T.PlaneGeometry(0.8,0.703),new T.MeshBasicMaterial({map:cpTex,transparent:true,side:T.DoubleSide}));compPanel.visible=false;rig.add(compPanel);
+function placePanel(mode){if(mode==='xr'){compPanel.scale.setScalar(1);compPanel.position.set(-0.85,1.35,-0.7);compPanel.rotation.set(0,0.88,0)}else{compPanel.scale.setScalar(100);compPanel.position.set(-85,-10,-120);compPanel.rotation.set(0,0.25,0)}}
+function drawComp(){const c=cpCv.getContext('2d'),W=1024,H=900;c.clearRect(0,0,W,H);c.fillStyle='rgba(10,20,40,.93)';rr(c,0,0,W,H,40);c.fillStyle='#ffffff';c.font='bold 46px Arial';c.textAlign='left';c.fillText('Components on this robot ('+CP.length+')',32,64);
+ CP.forEach((p,i)=>{const col=i<12?0:1,row=i<12?i:i-12,x=24+col*500,y=96+row*44;if(i===compSel){c.fillStyle='rgba(255,210,122,.28)';rr(c,x-6,y,490,42,10)}c.fillStyle=i===compSel?'#ffd27a':'#cfd8e6';c.font=(i===compSel?'bold ':'')+'30px Arial';c.fillText((i+1)+'. '+(SHORT[i]||p[1])+(p[2]>1?' ×'+p[2]:''),x,y+31)});
+ const p=CP[compSel];c.fillStyle='#ffffff';c.font='bold 32px Arial';c.fillText(p[1]+' ×'+p[2],32,664);c.fillStyle='#9bd0ff';c.font='28px Arial';c.fillText('Where: '+p[3],32,704);c.fillStyle='#e8e8e8';c.font='26px Arial';wrapText(c,p[4],32,744,960,34);
+ c.fillStyle='#8fa3bd';c.font='24px Arial';c.fillText('Point + trigger on a row · B next part · A labels',32,884);cpTex.needsUpdate=true}
+function compPick(uv){const px=uv.x*1024,py=(1-uv.y)*900;if(py>=96&&py<96+12*44){const col=px<512?0:1,row=Math.floor((py-96)/44),i=col*12+row;if(i<CP.length)selectComp(i)}}
+const guide=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,1,0)]),new T.LineBasicMaterial({color:0xff5a36,depthTest:false,transparent:true,opacity:0.9}));guide.renderOrder=11;guide.visible=false;S.add(guide);
+function selectComp(i){compSel=(i+CP.length)%CP.length;pickPart(CP[compSel][0],null,false);drawComp();guide.visible=compPanel.visible}
+function nextComp(d){selectComp(compSel+d);tourT=0}
+const gv1=new T.Vector3(),gv2=new T.Vector3();
+function guideFrame(dt){if(labG.visible){const k=vrMode==='xr'?rig.scale.x/100:Math.min(2,Math.max(0.35,rad/250));labSp.forEach(sp=>sp.scale.set(15*k,2.8*k,1))}
+ if(!compPanel.visible)return;if(touring){tourT+=dt;if(tourT>4){tourT=0;selectComp(compSel+1)}}
+ compPanel.getWorldPosition(gv1);const p=lc(CP[compSel][0]);gv2.set(p[0],p[1],p[2]);Rb.localToWorld(gv2);guide.geometry.setFromPoints([gv1,gv2])}
+function startGuide(){placePanel('flat');showLabels=true;setLabels();compPanel.visible=true;ghost=true;document.getElementById('gh').classList.add('on');touring=true;tourT=0;selectComp(0)}
+function stopGuide(){compPanel.visible=false;guide.visible=false;touring=false}
+function vrScale(sc_){const d=sc_>100?0.9:(sc_<100?3:1.6);rig.scale.setScalar(sc_);rig.position.set(0,sc_>100?-0.75*sc_:0,d*sc_)}
+let vrS=100;const prevB={},fw=new T.Vector3(),rtv=new T.Vector3();
+function edge(k,pressed){const was=prevB[k];prevB[k]=pressed;return pressed&&!was}
+function vrFrame(dt){const ses=R_.xr.getSession();if(!ses)return;let t=0,r=0;
+ ses.inputSources.forEach(src=>{const gp=src.gamepad;if(!gp)return;const ax=gp.axes,bt=gp.buttons,sx=ax.length>=4?ax[2]:ax[0],sy=ax.length>=4?ax[3]:ax[1],h=src.handedness||'none';
+  if(h==='left'){t=Math.abs(sy)>0.15?-sy:0;r=Math.abs(sx)>0.15?-sx:0;
+   if(bt[4]&&edge('lx',bt[4].pressed)){ghost=!ghost;document.getElementById('gh').classList.toggle('on',ghost);applyView()}
+   if(bt[5]&&edge('ly',bt[5].pressed)){vrS=vrS===100?300:(vrS===300?40:100);vrScale(vrS)}}
+  else if(h==='right'){cam.getWorldDirection(fw);fw.y=0;fw.normalize();rtv.set(-fw.z,0,fw.x);const sp=1.2*rig.scale.x;
+   if(Math.abs(sy)>0.15)rig.position.addScaledVector(fw,-sy*sp*dt);if(Math.abs(sx)>0.15)rig.position.addScaledVector(rtv,sx*sp*dt);
+   if(bt[4]&&edge('ra',bt[4].pressed))toggleLabels();if(bt[5]&&edge('rb',bt[5].pressed))nextComp(1)}});
+ vrD.t=t;vrD.r=r;pAcc+=dt;if(pAcc>0.25){pAcc=0;drawPanel()}}
+function wrapText(c,txt,x,y,mw,lh){const w=txt.split(' ');let l='';for(let i=0;i<w.length;i++){const tl=l+w[i]+' ';if(c.measureText(tl).width>mw&&i>0){c.fillText(l,x,y);l=w[i]+' ';y+=lh}else l=tl}c.fillText(l,x,y)}
+let pAcc=0;function drawPanel(){const c=panelCv.getContext('2d'),W=1024,H=512;c.clearRect(0,0,W,H);c.fillStyle='rgba(10,20,40,.9)';rr(c,0,0,W,H,36);c.fillStyle='#fff';c.font='bold 44px Arial';c.textAlign='left';c.fillText('Robot V1 · VR',32,64);
+ c.font='38px Arial';c.fillStyle='#ffd27a';c.fillText('Speed '+Math.abs(st.v).toFixed(2)+' m/s ('+Math.abs(st.v*3.6).toFixed(1)+' km/h)',32,128);c.fillStyle='#9bd0ff';c.fillText('RPM L / R  '+rpmOf(st.wl).toFixed(0)+' / '+rpmOf(st.wr).toFixed(0),32,182);
+ c.fillStyle='#c9a6ff';c.fillText('PWM '+Math.round(st.dl*100)+' / '+Math.round(st.dr*100)+' %   Heading '+TLV.hd.textContent+'°',32,236);c.fillStyle='#ff9a9a';c.fillText('Distance '+(st.dist/100).toFixed(2)+' m · '+statusLong(),32,290);
+ c.fillStyle='#fff';c.font='30px Arial';wrapText(c,'Selected: '+info.textContent.slice(0,120),32,350,960,38);c.fillStyle='#8fa3bd';c.font='25px Arial';c.fillText('Trig select · L-stick drive · R-stick move · X shell · Y scale · A labels · B next',32,490);panelTex.needsUpdate=true}
+async function enterXR(){const w=why();if(w){msg(w);return}
+ try{const ok=await navigator.xr.isSessionSupported('immersive-vr');if(!ok){msg('No VR headset detected here. Use a headset browser, or Cardboard mode on a phone.');return}
+  const ses=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor']});ses.addEventListener('end',endXR);await R_.xr.setSession(ses);
+  vrMode='xr';vrS=100;vrScale(100);cam.near=0.02;cam.far=60;cam.updateProjectionMatrix();panel.visible=true;drawPanel();placePanel('xr');showLabels=true;setLabels();compPanel.visible=true;touring=false;ghost=true;document.getElementById('gh').classList.add('on');selectComp(0);msg('VR active: the component board is on your left and every part has a numbered label.')}
+ catch(e){msg('Could not start VR: '+e.message+' (open the page in its own tab, not in an embedded frame).')}}
+function endXR(){vrMode=null;rig.scale.setScalar(1);rig.position.set(0,0,0);rig.rotation.set(0,0,0);cam.near=0.5;cam.far=3000;cam.updateProjectionMatrix();panel.visible=false;vrD.t=vrD.r=0;stopGuide();msg('VR ended.')}
+const zee=new T.Vector3(0,0,1),eu=new T.Euler(),q0=new T.Quaternion(),q1=new T.Quaternion(-Math.sqrt(0.5),0,0,Math.sqrt(0.5)),scam=new T.StereoCamera();scam.eyeSep=6.4;let a0=null;
+function onDO(e){if(e.alpha===null||e.alpha===undefined)return;if(a0===null)a0=e.alpha;const d=Math.PI/180,o=((screen.orientation&&screen.orientation.angle)||0)*d;eu.set(e.beta*d,(e.alpha-a0)*d,-e.gamma*d,'YXZ');cam.quaternion.setFromEuler(eu);cam.quaternion.multiply(q1);cam.quaternion.multiply(q0.setFromAxisAngle(zee,-o))}
+async function enterCard(){try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted'){msg('Motion-sensor permission was denied.');return}}}catch(e){}
+ addEventListener('deviceorientation',onDO);a0=null;vrMode='card';startGuide();document.getElementById('v').classList.add('card');rig.scale.setScalar(1);cam.near=1;cam.far=3000;cam.updateProjectionMatrix();
+ const el=document.getElementById('v');if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});msg('Cardboard mode: tap the screen to start / stop driving forward.')}
+function exitCard(){stopGuide();removeEventListener('deviceorientation',onDO);vrMode=null;vrD.t=0;rig.position.set(0,0,0);cam.quaternion.set(0,0,0,1);document.getElementById('v').classList.remove('card');rs();msg('')}
+document.addEventListener('fullscreenchange',()=>{rs();if(!document.fullscreenElement&&vrMode==='card'&&!preview)exitCard()});
+cv.addEventListener('click',()=>{if(vrMode==='card')vrD.t=vrD.t?0:1});
+function cardFrame(){rig.position.set(st.x,150,st.z+170);if(preview)cam.quaternion.setFromEuler(eu.set(pPitch,pYaw,0,'YXZ'))}
+function renderCard(){const w=cv.clientWidth,h=cv.clientHeight;R_.setScissorTest(true);cam.aspect=(w/2)/h;cam.updateProjectionMatrix();rig.updateMatrixWorld(true);cam.updateMatrixWorld(true);scam.update(cam);
+ R_.setViewport(0,0,w/2,h);R_.setScissor(0,0,w/2,h);R_.render(S,scam.cameraL);R_.setViewport(w/2,0,w/2,h);R_.setScissor(w/2,0,w/2,h);R_.render(S,scam.cameraR);R_.setScissorTest(false);R_.setViewport(0,0,w,h)}
+const pvb=document.getElementById('pvb');
+function enterPreview(){preview=true;pYaw=0;pPitch=0;vrMode='card';startGuide();rig.scale.setScalar(1);cam.near=1;cam.far=3000;cam.updateProjectionMatrix();pvb.textContent='Exit preview';pvb.classList.add('on');msg('Stereo preview: drag with the mouse to look around, W/A/S/D or arrow keys to drive. This is how it looks in a headset (no head tracking).')}
+function exitPreview(){stopGuide();preview=false;vrMode=null;vrD.t=0;rig.position.set(0,0,0);cam.quaternion.set(0,0,0,1);cam.aspect=cv.clientWidth/cv.clientHeight;cam.updateProjectionMatrix();R_.setScissorTest(false);rs();pvb.textContent='Stereo preview (no headset)';pvb.classList.remove('on');msg('')}
+pvb.onclick=()=>{if(preview)exitPreview();else enterPreview()};
+vrb.onclick=enterXR;cbb.onclick=enterCard;
+function why(){const iframe=window.self!==window.top;let blocked=false;try{if(document.featurePolicy&&!document.featurePolicy.allowsFeature('xr-spatial-tracking'))blocked=true}catch(e){}
+ if(blocked||iframe)return 'This page is inside an embedded frame that blocks WebXR. Open the published link in its own browser tab.';
+ if(!window.isSecureContext)return 'WebXR needs a secure (https) page.';
+ if(!navigator.xr)return 'This browser has no WebXR (try Meta Quest Browser, or Chrome / Edge on a PC with a connected VR headset).';return ''}
+if(navigator.xr&&navigator.xr.isSessionSupported){navigator.xr.isSessionSupported('immersive-vr').then(ok=>{msg(why()||(ok?'VR headset detected: ready.':'No VR headset detected on this device (a normal PC/phone has none). Use "Stereo preview" or "Cardboard".'))}).catch(()=>{msg(why()||'WebXR check failed. Use "Stereo preview" or "Cardboard".')})}else{msg(why()||'WebXR is not available here. Use "Stereo preview" or "Cardboard".')}
+buildWires();applyView();refreshAll();
 let last=performance.now(),hudT=0;
-(function loop(now){requestAnimationFrame(loop);const dt=Math.min(0.05,(now-last)/1000||0.016);last=now;
+function loop(now){const dt=Math.min(0.05,(now-last)/1000||0.016);last=now;
  if(auto&&!drag){th+=0.006;tt=th}else if(!drag){th+=(tt-th)*0.12;ph+=(tp-ph)*0.12}rad+=(tr-rad)*0.12;OFF.lerp(OFFt,0.12);
- step(dt);tele(dt);upd();hudT+=dt;if(hudT>0.3){hudT=0;drawScr()}R_.render(S,cam)})(performance.now());
+ if(vrMode==='xr')vrFrame(dt);guideFrame(dt);step(dt);tele(dt);if(vrMode==='card')cardFrame();else if(vrMode===null)upd();hudT+=dt;if(hudT>0.3){hudT=0;drawScr()}if(vrMode==='card')renderCard();else R_.render(S,cam)}
+R_.setAnimationLoop(loop);
 </script>
 </body></html>
