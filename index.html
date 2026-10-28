@@ -49,6 +49,12 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:var(--acbg)}.dot{d
 <div class="sl"><span>PWM limit</span><b id="vP">80%</b></div><input type="range" id="sP" min="10" max="100" step="5" value="80">
 <div class="row" style="margin-top:6px"><button class="bt on" id="fl">Follow camera</button><button class="bt" id="rs">Reset</button></div>
 <div class="pn">Power button &amp; charging</div><div class="row"><button class="bt on" id="pwrb">Power: ON</button><button class="bt" id="chgb">Charger: unplugged</button></div><div class="sl"><span>Battery charge (SoC)</span><b id="vS">80%</b></div><input type="range" id="sS" min="0" max="100" value="80"><div class="sl"><span>Time warp (battery only)</span><b id="vW">×1</b></div><input type="range" id="sW" min="0" max="3" step="1" value="0"><div class="sc">Click the rocker or the DC inlet on the robot’s back (or press P / C).</div>
+<div class="pn">Room &amp; child</div><div class="row"><button class="bt on" id="rmb">Room: ON</button><button class="bt on" id="kdb">Child: ON</button></div>
+<div class="sl"><span>Child height</span><b id="vK">125 cm · ≈ 7 yr</b></div><input type="range" id="sK" min="105" max="145" step="1" value="125">
+<div class="row" style="margin-top:6px"><button class="bt on" id="k1">Idle</button><button class="bt" id="k2">Wave</button><button class="bt" id="k3">Walk to robot</button><button class="bt" id="k4">Patrol</button></div>
+<div class="row" style="margin-top:6px"><button class="bt on" id="m1">Robot: manual</button><button class="bt" id="m2">Robot: follow child</button></div>
+<div class="row" style="margin-top:6px"><button class="bt on" id="sfb">Obstacle safety</button><button class="bt" id="ryb">Show HC-SR04 ray</button><button class="bt on" id="shb">Shadows</button></div>
+<div class="sc">The robot measures the distance ahead with a simulated HC-SR04 (rays, 2–400 cm) and slows to a stop before the child, furniture or walls.</div>
 <div class="pn">Virtual reality (VR)</div><div class="row"><button class="bt" id="vrb">Enter VR headset</button><button class="bt" id="cbb">Cardboard (phone)</button><button class="bt" id="pvb">Stereo preview (no headset)</button></div><div class="sub" id="vrmsg" style="margin:4px 0 0">Checking VR support…</div>
 <div class="pn">Selected</div><div id="info">Click any part or wire</div></div></div>
 <h2>Live telemetry (updates while the robot moves)</h2>
@@ -78,10 +84,10 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:var(--acbg)}.dot{d
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const T=THREE,cv=document.getElementById('c'),tip=document.getElementById('tip'),info=document.getElementById('info');
-const R_=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R_.setPixelRatio(Math.min(devicePixelRatio,2));
+const R_=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R_.setPixelRatio(Math.min(devicePixelRatio,2));R_.shadowMap.enabled=true;R_.shadowMap.type=T.PCFSoftShadowMap;
 const S=new T.Scene(),cam=new T.PerspectiveCamera(40,1,0.5,3000);
 const rig=new T.Group();rig.add(cam);S.add(rig);R_.xr.enabled=true;R_.xr.setReferenceSpaceType('local-floor');
-S.add(new T.HemisphereLight(0xffffff,0x556677,0.8));const d1=new T.DirectionalLight(0xffffff,0.85);d1.position.set(150,300,200);S.add(d1);const d2=new T.DirectionalLight(0xffffff,0.35);d2.position.set(-200,120,-150);S.add(d2);
+S.add(new T.HemisphereLight(0xffffff,0x556677,0.8));const d1=new T.DirectionalLight(0xfff1dc,0.9);d1.position.set(-260,270,70);d1.castShadow=true;d1.shadow.mapSize.set(2048,2048);d1.shadow.camera.left=-330;d1.shadow.camera.right=330;d1.shadow.camera.top=330;d1.shadow.camera.bottom=-330;d1.shadow.camera.near=50;d1.shadow.camera.far=900;d1.shadow.bias=-0.0006;S.add(d1);const d2=new T.DirectionalLight(0xffffff,0.35);d2.position.set(-200,120,-150);S.add(d2);
 const Rb=new T.Group();S.add(Rb);const ALL=[],WIRES=[];const Wg=new T.Group();Rb.add(Wg);
 const std=(c,r,m,o)=>new T.MeshStandardMaterial({color:c,roughness:r===undefined?0.55:r,metalness:m||0,transparent:o!==undefined,opacity:o===undefined?1:o});
 function B(g,w,h,d,x,y,z,m){const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);g.add(o);return o}
@@ -243,15 +249,15 @@ function applyView(){ALL.forEach(g=>{const u=g.userData;let op=1;if(flt==='wires
  Wg.children.forEach(m=>{const i=m.userData.wire,w=WL[i];m.visible=WCV[w[1]]&&!WOFF[i]&&(flt==='all'||flt==='wires');const dim=(hlWire!==null&&hlWire!==i)||HLset;m.material.transparent=!!dim;m.material.opacity=dim?0.18:1;m.material.emissive.setHex(hlWire===i?0x666600:0)});
  ALL.forEach(g=>glow(g,HLset&&HLset.includes(g)?0x555500:0))}
 // ================= HP SCREEN =================
-const st={x:0,z:0,th:0,wl:0,wr:0,rl:0,rr:0,dist:0,V:11.1,pwm:0.8,v:0,dl:0,dr:0,iL:0,iR:0,ib:0,pw:0,E:0,yaw:0,acc:0,on:true,chg:false,cut:false,soc:0.8,warp:1,Vman:11.1,Ibat:0,Ptot:0,Ich:0};
+const st={x:0,z:0,th:0,wl:0,wr:0,rl:0,rr:0,dist:0,V:11.1,pwm:0.8,v:0,dl:0,dr:0,iL:0,iR:0,ib:0,pw:0,E:0,yaw:0,acc:0,on:true,chg:false,cut:false,soc:0.8,warp:1,Vman:11.1,Ibat:0,Ptot:0,Ich:0,us:400};let roomReady=false;
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();c.fill()}
 function drawScr(){const c=scr.image.getContext('2d'),W=1024,H=640;if(!st.on){c.fillStyle='#050608';c.fillRect(0,0,W,H);c.fillStyle='#2a2f38';c.font='bold 44px Arial';c.textAlign='center';c.fillText(st.cut?'BMS CUT-OFF — charge the battery':'OFF',W/2,H/2);scr.needsUpdate=true;return}const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a1a3a');g.addColorStop(1,'#14346e');c.fillStyle=g;c.fillRect(0,0,W,H);
  c.fillStyle='rgba(255,255,255,.12)';c.fillRect(0,0,W,70);c.fillStyle='#fff';c.font='bold 34px Segoe UI,Arial';c.textAlign='left';c.fillText('Educational Smart Robot V1',24,46);c.textAlign='right';c.font='26px Arial';c.fillStyle='#7bd88f';c.fillText('● SIMULATION',W-24,45);
  const rpm=w=>Math.round(w*60/(2*Math.PI)),hd=Math.round(((st.th*180/Math.PI)%360+360)%360);
- const tl=[['Battery',st.V.toFixed(1)+' V · '+Math.round(st.soc*100)+'%','#ffb347'],['Speed',Math.abs(st.v).toFixed(2)+' m/s','#7bd88f'],['Wheel RPM L / R',rpm(st.wl)+' / '+rpm(st.wr),'#6fb7ff'],['PWM L / R',Math.round(st.dl*100)+' / '+Math.round(st.dr*100)+' %','#c9a6ff'],['Heading',hd+'°','#ffd166'],['Distance',(st.dist/100).toFixed(2)+' m','#ff8a8a'],['Motor I (est.)',(st.iL+st.iR).toFixed(1)+' A','#9bd0ff'],['Status',st.chg?'CHARGING':statusShort(),'#7bd88f']];
+ const tl=[['Battery',st.V.toFixed(1)+' V · '+Math.round(st.soc*100)+'%','#ffb347'],['Speed',Math.abs(st.v).toFixed(2)+' m/s','#7bd88f'],['Wheel RPM L / R',rpm(st.wl)+' / '+rpm(st.wr),'#6fb7ff'],['HC-SR04',usTxt(),'#ffd166'],['Heading',hd+'°','#ffd166'],['Distance',(st.dist/100).toFixed(2)+' m','#ff8a8a'],['Motor I (est.)',(st.iL+st.iR).toFixed(1)+' A','#9bd0ff'],['Status',st.chg?'CHARGING':statusShort(),'#7bd88f']];
  tl.forEach((t,i)=>{const x=24+(i%4)*242,y=100+Math.floor(i/4)*150;c.fillStyle='rgba(255,255,255,.13)';rr(c,x,y,226,130,16);c.fillStyle='#cfd8e6';c.font='24px Arial';c.textAlign='left';c.fillText(t[0],x+16,y+36);c.fillStyle=t[2];c.font='bold 34px Arial';c.fillText(t[1],x+16,y+92)});
  [['Games','#ff7a59'],['Camera','#4cc3a0'],['Drive','#5b9cff'],['Settings','#a98bff']].forEach((b,i)=>{const x=24+i*242,y=430;c.fillStyle=b[1];rr(c,x,y,226,110,18);c.fillStyle='#fff';c.font='bold 34px Arial';c.textAlign='center';c.fillText(b[0],x+113,y+66)});
- c.fillStyle='rgba(255,255,255,.55)';c.font='22px Arial';c.textAlign='center';c.fillText('UI · games · vision · robot dashboard (HP Elite x2)',W/2,600);scr.needsUpdate=true}
+ c.fillStyle='rgba(255,255,255,.55)';c.font='22px Arial';c.textAlign='center';c.fillText(greetTxt(),W/2,600);scr.needsUpdate=true}
 drawScr();
 // ================= SELECTION / FLY =================
 const OFF=new T.Vector3(0,48,0),OFFt=new T.Vector3(0,48,0);let th=0.5,ph=1.3,rad=250,tt=0.5,tp=1.3,tr=250,auto=false,drag=false,lx=0,ly=0,mvd=0,follow=true;
@@ -286,7 +292,7 @@ const CP=[
 ['CAM','USB camera',1,'Inside the head (front)','External device with USB to the HP; the position is a design choice.']];
 const tb=document.getElementById('tb');CP.forEach(c=>{const r=document.createElement('tr');r.innerHTML='<td>'+c[1]+'</td><td>'+c[2]+'</td><td>'+c[3]+'</td><td>'+c[4]+'</td>';r.onclick=()=>pickPart(c[0],r);tb.appendChild(r)});
 const wb=document.getElementById('wb');WL.forEach((w,i)=>{const r=document.createElement('tr');r.innerHTML='<td>'+(i+1)+'</td><td>'+w[0]+'</td><td><span class="dot" style="background:'+WCOL[w[1]]+'"></span>'+WNAME[w[1]]+'</td><td>'+w[3]+'</td>';r.onclick=()=>pickWire(i,r);wb.appendChild(r)});
-const NT=['Power budget: ESP32, HC-SR04, PAM8403 and the motors come with datasheet / README figures; HP, camera, OLED, DHT11 and the MDD20A quiescent current are labelled assumptions or TBD. Measure the real robot with a USB power meter / clamp meter and replace the grey inputs.','Battery simulation uses a generic Li-ion voltage curve (per cell 3.0 V at 0 % → 4.2 V at 100 %) and a pack resistance estimate; the BMS cut-off is assumed at 0 % (≈ 9 V). Use the time-warp slider to watch the battery drain without waiting.','The README says V1 must not run while charging: with the charger plugged in, driving is disabled here.','Main PCB: size and exact position are TBD. It is drawn as a shelf above the battery so that the wires stay short; all its connectors (J1–J14) sit on the board edges.',
+const NT=['Room scene: the room, furniture and the child are illustrative 3D models (child proportions are approximate, height slider 105–145 cm; the age shown is only a typical median). The HC-SR04 is simulated by rays (5 beams across about 15°, range 2–400 cm); the robot slows from 60 cm and stops at about 25 cm in front of an obstacle. The sensor sees forward only.','Power budget: ESP32, HC-SR04, PAM8403 and the motors come with datasheet / README figures; HP, camera, OLED, DHT11 and the MDD20A quiescent current are labelled assumptions or TBD. Measure the real robot with a USB power meter / clamp meter and replace the grey inputs.','Battery simulation uses a generic Li-ion voltage curve (per cell 3.0 V at 0 % → 4.2 V at 100 %) and a pack resistance estimate; the BMS cut-off is assumed at 0 % (≈ 9 V). Use the time-warp slider to watch the battery drain without waiting.','The README says V1 must not run while charging: with the charger plugged in, driving is disabled here.','Main PCB: size and exact position are TBD. It is drawn as a shelf above the battery so that the wires stay short; all its connectors (J1–J14) sit on the board edges.',
 'The README lists F1 and SW1 among the PCB parts but also says they may be in the power system / on a mechanical panel. They are drawn off the PCB; if they are on the PCB, 14–20 A flows through PCB copper (see the power-architecture diagram).',
 'Not defined in the README, so not invented: the 5 V buck converter input feed, the audio source for J11, and whether motor power passes through J6/J7. Here: MDD20A powers the motors directly; J6/J7 carry only the encoders.',
 'Casters are not in the new README. Two are drawn (front + rear) because two drive wheels alone cannot stand.',
@@ -297,8 +303,8 @@ const nt=document.getElementById('nt');NT.forEach(n=>{const l=document.createEle
 // ================= UI =================
 function rs(){const w=cv.clientWidth,h=cv.clientHeight;R_.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}addEventListener('resize',rs);rs();
 function setView(a,b,r,off){tt=a;tp=b;tr=r;if(off)OFFt.set(off[0],off[1],off[2])}
-const VW=[['Iso',0.5,1.3,250,[0,48,0]],['Front',0,1.5,250,[0,48,0]],['Back',Math.PI,1.5,250,[0,48,0]],['Left',Math.PI/2,1.5,250,[0,48,0]],['Right',-Math.PI/2,1.5,250,[0,48,0]],['Top',0,0.02,250,[0,48,0]],['HP screen',0,1.5,58,[0,58,13]],['Main PCB',0.35,0.8,46,[0,24,-1]],['Base',0.5,1.1,85,[0,12,0]]];
-VW.forEach((v,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=v[0];b.onclick=()=>{setView(v[1],v[2],v[3],v[4]);if(v[0]==='Main PCB'||v[0]==='Base'){ghost=true;document.getElementById('gh').classList.add('on');applyView()}document.querySelectorAll('#views .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on')};document.getElementById('views').appendChild(b)});
+const VW=[['Iso',0.5,1.3,250,[0,48,0]],['Front',0,1.5,250,[0,48,0]],['Back',Math.PI,1.5,250,[0,48,0]],['Left',Math.PI/2,1.5,250,[0,48,0]],['Right',-Math.PI/2,1.5,250,[0,48,0]],['Top',0,0.02,250,[0,48,0]],['HP screen',0,1.5,58,[0,58,13]],['Main PCB',0.35,0.8,46,[0,24,-1]],['Base',0.5,1.1,85,[0,12,0]],['Room',0.75,1.1,560,[0,60,40]],['Child eye',0,1.5,250,[0,48,0],'child'],['Robot eye',0,1.5,250,[0,48,0],'robot']];
+VW.forEach((v,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=v[0];b.onclick=()=>{camMode=v[5]||'orbit';setView(v[1],v[2],v[3],v[4]);if(v[0]==='Main PCB'||v[0]==='Base'){ghost=true;document.getElementById('gh').classList.add('on');applyView()}document.querySelectorAll('#views .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on')};document.getElementById('views').appendChild(b)});
 ['pow','motor','sig','aud','usb'].forEach(k=>{const b=document.createElement('button');b.className='bt on';b.innerHTML='<span class="dot" style="background:'+WCOL[k]+'"></span>'+WNAME[k];b.onclick=()=>{WCV[k]=!WCV[k];b.classList.toggle('on',WCV[k]);applyView()};document.getElementById('wc').appendChild(b)});
 [['all','All'],['shell','Shell'],['power','Power'],['drive','Drive & motors'],['pcb','Main PCB'],['sensors','Sensors & display'],['audio','Audio'],['hp','HP & camera'],['wires','Wires only']].forEach((g,i)=>{const b=document.createElement('button');b.className='bt'+(i?'':' on');b.textContent=g[1];b.onclick=()=>{flt=g[0];HLset=null;hlWire=null;clearRows();document.querySelectorAll('#grp .bt').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyView()};document.getElementById('grp').appendChild(b)});
 document.getElementById('gh').onclick=function(){ghost=!ghost;this.classList.toggle('on',ghost);applyView()};
@@ -318,7 +324,7 @@ const gr=new T.GridHelper(1000,100,0x888780,0x888780);gr.material.transparent=tr
 const MOT={w0:122*2*Math.PI/60,I0:0.35,Ist:7,Vn:12,GR:90,CPR:1440};MOT.Ra=MOT.Vn/MOT.Ist;MOT.Ke=(MOT.Vn-MOT.I0*MOT.Ra)/MOT.w0;MOT.Kt=3.73/MOT.Ist;
 let tTot=0,tMov=0,vMax=0;const hist=[];
 function resetAll(){st.x=0;st.z=0;st.th=0;st.wl=0;st.wr=0;st.rl=0;st.rr=0;st.dist=0;st.v=0;st.dl=0;st.dr=0;st.iL=0;st.iR=0;st.ib=0;st.pw=0;st.E=0;st.yaw=0;st.acc=0;tTot=0;tMov=0;vMax=0;hist.length=0}
-function step(dt){const ok=(st.on&&!st.chg)?1:0;const t=ok*Math.max(-1,Math.min(1,(key.u?1:0)-(key.d?1:0)+btn.t+vrD.t)),r=ok*Math.max(-1,Math.min(1,(key.l?1:0)-(key.r?1:0)+btn.r+vrD.r));
+function step(dt){const ok=(st.on&&!st.chg)?1:0;const t0=ok*Math.max(-1,Math.min(1,(key.u?1:0)-(key.d?1:0)+btn.t+vrD.t+autoC.t)),t=t0>0?t0*safeK:t0,r=ok*Math.max(-1,Math.min(1,(key.l?1:0)-(key.r?1:0)+btn.r+vrD.r+autoC.r));
  const wmax=MOT.w0*(st.V/12),cl=Math.max(-1,Math.min(1,t-r)),cr=Math.max(-1,Math.min(1,t+r)),a=1-Math.exp(-dt/0.3);
  st.dl=cl*st.pwm;st.dr=cr*st.pwm;st.wl+=(st.dl*wmax-st.wl)*a;st.wr+=(st.dr*wmax-st.wr)*a;
  const v=R*(st.wl+st.wr)/2,yaw=R*(st.wr-st.wl)/(2*PX),vn=v/100;
@@ -433,7 +439,7 @@ const TL=[['spd','Speed','m/s',()=>st.v.toFixed(2),0],['kmh','Speed','km/h',()=>
 ['mx','Max speed reached','m/s',()=>vMax.toFixed(2),0],['tm','Time moving / total','s',()=>tMov.toFixed(1)+' / '+tTot.toFixed(1),0],
 ['sv','Battery voltage (set)','V',()=>st.V.toFixed(1),0],['mxv','Theoretical max speed','m/s',()=>(R*MOT.w0*(st.V/12)/100).toFixed(2),0],
 ['il','Motor current — left','A',()=>st.iL.toFixed(1),1],['ir','Motor current — right','A',()=>st.iR.toFixed(1),1],['ib','Battery current (motors)','A',()=>st.ib.toFixed(1),1],
-['pw','Motor power from battery','W',()=>st.pw.toFixed(0),1],['en','Energy used (motors)','Wh',()=>st.E.toFixed(2),1],['soc','Battery charge (SoC)','%',()=>(st.soc*100).toFixed(1),0],['vp','Pack voltage','V',()=>st.V.toFixed(2),0],['ibt','Battery current (all loads)','A',()=>st.Ibat.toFixed(1),1],['ptt','Total power from battery','W',()=>st.Ptot.toFixed(0),1],['rem','Time left at this load','h',()=>st.Ibat>0.05?(st.soc*packAh()/st.Ibat).toFixed(1):'—',1],['stt','Status','',()=>(st.cut?'BMS CUT-OFF':(st.chg?'CHARGING':(st.on?statusLong():'POWER OFF'))),0]];
+['pw','Motor power from battery','W',()=>st.pw.toFixed(0),1],['en','Energy used (motors)','Wh',()=>st.E.toFixed(2),1],['us','Obstacle distance (HC-SR04, sim)','cm',()=>st.us>=399?'> 400':st.us.toFixed(0),0],['soc','Battery charge (SoC)','%',()=>(st.soc*100).toFixed(1),0],['vp','Pack voltage','V',()=>st.V.toFixed(2),0],['ibt','Battery current (all loads)','A',()=>st.Ibat.toFixed(1),1],['ptt','Total power from battery','W',()=>st.Ptot.toFixed(0),1],['rem','Time left at this load','h',()=>st.Ibat>0.05?(st.soc*packAh()/st.Ibat).toFixed(1):'—',1],['stt','Status','',()=>(st.cut?'BMS CUT-OFF':(st.chg?'CHARGING':(st.on?statusLong():'POWER OFF'))),0]];
 const tilesEl=document.getElementById('tiles');const TLV={};TL.forEach(t=>{const d=document.createElement('div');d.className='tl'+(t[4]?' est':'');d.innerHTML='<span>'+t[1]+(t[4]?' (est.)':'')+'</span><b>0</b><small>'+t[2]+'</small>';tilesEl.appendChild(d);TLV[t[0]]=d.querySelector('b')});
 // ---- charts
 const HLEN=300;let hAcc=0;
@@ -450,7 +456,7 @@ function tele(dt){hAcc+=dt;if(hAcc<0.1)return;hAcc=0;hist.push({v:st.v,l:rpmOf(s
  drawChart(document.getElementById('ch2'),[[h=>h.l,'#2e90ff','left'],[h=>h.r,'#2fb344','right']],-rm*1.05,rm*1.05,'Wheel RPM','rpm');
  hudEl.innerHTML='<b>'+Math.abs(st.v).toFixed(2)+'</b> m/s · '+Math.abs(st.v*3.6).toFixed(2)+' km/h<br><i>RPM L / R:</i> '+rpmOf(st.wl).toFixed(0)+' / '+rpmOf(st.wr).toFixed(0)+' &nbsp; <i>PWM:</i> '+(st.dl*100).toFixed(0)+' / '+(st.dr*100).toFixed(0)+' %<br><i>Heading:</i> '+TLV.hd.textContent+'° &nbsp; <i>Dist:</i> '+(st.dist/100).toFixed(2)+' m<br><i>'+statusLong()+'</i>'}
 // ================= INTERACTION =================
-function upd(){const tx=(follow?Rb.position.x:0)+OFF.x,ty=OFF.y,tz=(follow?Rb.position.z:0)+OFF.z;cam.position.set(tx+rad*Math.sin(ph)*Math.sin(th),ty+rad*Math.cos(ph),tz+rad*Math.sin(ph)*Math.cos(th));cam.lookAt(tx,ty,tz)}
+function upd(){if(camMode!=='orbit'&&vrMode===null){camSpecial();return}const tx=(follow?Rb.position.x:0)+OFF.x,ty=OFF.y,tz=(follow?Rb.position.z:0)+OFF.z;cam.position.set(tx+rad*Math.sin(ph)*Math.sin(th),ty+rad*Math.cos(ph),tz+rad*Math.sin(ph)*Math.cos(th));cam.lookAt(tx,ty,tz)}
 cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;mvd=0;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
 cv.addEventListener('pointerup',e=>{drag=false;cv.style.cursor='grab';if(mvd<4){const h=hitAt(e);if(h&&h.wire!==undefined)pickWire(h.wire,null,false);else if(h&&h.ref){pickPart(h.ref,null,false);if(h.ref==='SW')togglePower();if(h.ref==='CHG')toggleCharge()}else{HLset=null;hlWire=null;clearRows();info.textContent='Click any part or wire';applyView()}}});
 const rc=new T.Raycaster(),m2=new T.Vector2();
@@ -546,11 +552,115 @@ function why(){const iframe=window.self!==window.top;let blocked=false;try{if(do
  if(!window.isSecureContext)return 'WebXR needs a secure (https) page.';
  if(!navigator.xr)return 'This browser has no WebXR (try Meta Quest Browser, or Chrome / Edge on a PC with a connected VR headset).';return ''}
 if(navigator.xr&&navigator.xr.isSessionSupported){navigator.xr.isSessionSupported('immersive-vr').then(ok=>{msg(why()||(ok?'VR headset detected: ready.':'No VR headset detected on this device (a normal PC/phone has none). Use "Stereo preview" or "Cardboard".'))}).catch(()=>{msg(why()||'WebXR check failed. Use "Stereo preview" or "Cardboard".')})}else{msg(why()||'WebXR is not available here. Use "Stereo preview" or "Cardboard".')}
-buildWires();applyView();refreshAll();
+// ================= ROOM + CHILD + HC-SR04 SIMULATION =================
+let camMode='orbit',robMode='manual',safetyOn=true,showRay=false,safeK=1,kidAct='idle',kidH=125,kidT=0,patI=0,usT=0;const autoC={t:0,r:0};
+const roomG=new T.Group();S.add(roomG);const furn=new T.Group();roomG.add(furn);
+const wood=cvTex(1024,1024,(c,W,H)=>{c.fillStyle='#b98a5a';c.fillRect(0,0,W,H);const n=30;for(let i=0;i<n;i++){const y=i*H/n;c.fillStyle='hsl(30,'+(35+((i*37)%15))+'%,'+(42+((i*53)%14))+'%)';c.fillRect(0,y,W,H/n-2);c.fillStyle='rgba(60,35,15,.5)';c.fillRect(0,y+H/n-2,W,2);for(let k=0;k<4;k++)c.fillRect((i*137+k*251)%W,y,2,H/n-2)}});
+const wmat=c=>new T.MeshStandardMaterial({color:c,roughness:.9,side:T.BackSide});
+const room=new T.Mesh(new T.BoxGeometry(600,280,500),[wmat(0xe6edf5),wmat(0xe6edf5),wmat(0xffffff),new T.MeshStandardMaterial({map:wood,roughness:.7,side:T.BackSide}),wmat(0xf3ecd9),wmat(0xdfe9f3)]);room.position.y=140;roomG.add(room);
+[[600,8,1.5,0,4,-249.2],[600,8,1.5,0,4,249.2],[1.5,8,500,-299.2,4,0],[1.5,8,500,299.2,4,0]].forEach(a=>B(roomG,a[0],a[1],a[2],a[3],a[4],a[5],std(0xf4f4f4,.8)));
+[[-150,278],[150,278],[-150,-278+0.0],[150,-278]].forEach((p,i)=>{});
+[[-150,-100],[150,-100],[-150,100],[150,100]].forEach(p=>{const m=new T.Mesh(new T.PlaneGeometry(90,40),new T.MeshBasicMaterial({color:0xfff7d6}));m.rotation.x=Math.PI/2;m.position.set(p[0],279.5,p[1]);roomG.add(m)});
+plane(roomG,220,110,0,150,248.6,cvTex(1100,550,(c,W,H)=>{c.fillStyle='#fbfbf8';c.fillRect(0,0,W,H);c.fillStyle='#2b5cb8';c.font='bold 70px Arial';c.textAlign='center';c.fillText('Welcome to the Smart Learning Room',W/2,120);c.fillStyle='#f58220';c.font='54px Arial';c.fillText('Today: meet Robot V1',W/2,200);c.fillStyle='#2e90ff';c.beginPath();c.arc(300,380,70,0,7);c.fill();c.fillStyle='#f1efe8';c.fillRect(240,450,120,80);c.fillStyle='#333';c.font='60px Arial';c.fillText('1 + 2 = 3',W*0.68,400);c.fillText('A  B  C',W*0.68,490)}),false,Math.PI);
+B(roomG,230,120,2,0,150,249.5,std(0x9aa3ad,.5,.4));
+plane(roomG,120,110,-299,150,0,cvTex(600,550,(c,W,H)=>{const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#7ec8ff');g.addColorStop(1,'#d9f0ff');c.fillStyle=g;c.fillRect(0,0,W,H);c.fillStyle='#fff';c.beginPath();c.arc(200,160,60,0,7);c.arc(280,170,50,0,7);c.fill();c.strokeStyle='#f3f3f3';c.lineWidth=18;c.strokeRect(9,9,W-18,H-18);c.beginPath();c.moveTo(W/2,0);c.lineTo(W/2,H);c.moveTo(0,H/2);c.lineTo(W,H/2);c.stroke()}),false,Math.PI/2);
+B(roomG,3,200,92,298.5,100,150,std(0x8b5a2b,.7));B(roomG,1,4,4,297.5,95,115,std(0xd4af37,.3,.9));
+plane(roomG,60,90,0,150,-249.4,cvTex(300,450,(c,W,H)=>{c.fillStyle='#ffe08a';c.fillRect(0,0,W,H);c.fillStyle='#d9534f';c.font='bold 120px Arial';c.textAlign='center';c.fillText('ABC',W/2,150);c.fillStyle='#2e90ff';c.fillText('123',W/2,300);c.fillStyle='#2fb344';c.font='bold 60px Arial';c.fillText('LEARN',W/2,400)}),false,0);
+plane(roomG,30,220,-200,110,-249.3,cvTex(150,1100,(c,W,H)=>{c.fillStyle='#fffbe8';c.fillRect(0,0,W,H);c.fillStyle='#333';c.font='bold 22px Arial';c.textAlign='left';for(let cm=0;cm<=200;cm+=10){const y=H-cm*5.5;c.fillRect(0,y,cm%50===0?70:40,3);if(cm%20===0||cm===100)c.fillText(cm+' cm',cm%50===0?76:46,y+8)}c.fillStyle='#f58220';c.fillRect(0,H-100*5.5-2,W,6)}),false,0);
+const rug=new T.Mesh(new T.CylinderGeometry(150,150,0.6,64),std(0x5b8bd6,.95));rug.position.set(0,0.3,40);roomG.add(rug);const rug2=new T.Mesh(new T.CylinderGeometry(120,120,0.7,64),std(0xf4c542,.95));rug2.position.set(0,0.35,40);roomG.add(rug2);const rug3=new T.Mesh(new T.CylinderGeometry(100,100,0.8,64),std(0x5b8bd6,.95));rug3.position.set(0,0.4,40);roomG.add(rug3);
+function desk(x,z){const g=new T.Group();g.position.set(x,0,z);furn.add(g);B(g,70,3,50,0,55,0,std(0xd9b27c,.7));[[-32,-22],[32,-22],[-32,22],[32,22]].forEach(p=>Cy(g,1.6,54,p[0],27,p[1],std(0x7a7f87,.5,.6)));return g}
+function chair(x,z,col){const g=new T.Group();g.position.set(x,0,z);furn.add(g);B(g,32,3,30,0,30,0,std(col,.6));B(g,32,28,2.5,0,46,-14,std(col,.6));[[-13,-12],[13,-12],[-13,12],[13,12]].forEach(p=>Cy(g,1.2,29,p[0],14.5,p[1],std(0x7a7f87,.5,.6)));return g}
+desk(-170,-60);chair(-170,-98,0x2e90ff);desk(-85,-60);chair(-85,-98,0xf58220);desk(190,-170);chair(190,-205,0x2fb344);
+{const g=new T.Group();g.position.set(284,0,-60);g.rotation.y=-Math.PI/2;furn.add(g);B(g,120,180,2,0,90,-14,std(0xcaa472,.7));[-59,59].forEach(x=>B(g,2,180,30,x,90,0,std(0xcaa472,.7)));for(let i=0;i<=5;i++)B(g,120,2,30,0,i*35+1,0,std(0xcaa472,.7));
+ const cl=[0xd9534f,0x2e90ff,0xf0c040,0x2fb344,0x8e5bd6,0xf58220];for(let r=0;r<5;r++){let x=-55;for(let k=0;k<12;k++){const w=3+((k*7+r*3)%4),h=18+((k*5+r*11)%9);if(x+w>56)break;B(g,w,h,22,x+w/2,r*35+2+h/2,0,std(cl[(k+r)%6],.7));x+=w+0.6}}}
+[[0xd9534f,'A',-40,150],[0x2e90ff,'B',-26,158],[0xf0c040,'C',-33,147]].forEach(a=>{const t=cvTex(128,128,(c,W,H)=>{c.fillStyle='#'+('000000'+a[0].toString(16)).slice(-6);c.fillRect(0,0,W,H);c.fillStyle='#fff';c.font='bold 90px Arial';c.textAlign='center';c.fillText(a[1],W/2,95)});const m=new T.Mesh(new T.BoxGeometry(8,8,8),new T.MeshStandardMaterial({map:t,roughness:.6}));m.position.set(a[2]+50,4,a[3]);m.rotation.y=a[2]*0.05;furn.add(m)});
+// ---- child
+const kid=new T.Group();S.add(kid);kid.position.set(90,0,125);const kidS=new T.Group();kid.add(kidS);
+const SK=0xf2c9a0,HR=0x4a2f1b,SHT=0xf58220,PNT=0x2f4a8a,SOL=0xf1efe8;
+function mkLeg(x){const g=new T.Group();g.position.set(x,58,0);kidS.add(g);Cy(g,3.4,58,0,-29,0,std(PNT,.8));B(g,6.5,5,12,0,-56,2.5,std(SOL,.6));return g}
+const legL=mkLeg(5),legR=mkLeg(-5);
+const tor=Cy(kidS,8.6,40,0,78,0,std(SHT,.7));tor.scale.z=0.62;Cy(kidS,2.6,5,0,100.5,0,std(SK,.7));
+const head=new T.Group();head.position.set(0,112,0);kidS.add(head);Sp(head,10.5,0,0,0,std(SK,.7));
+{const h=new T.Mesh(new T.SphereGeometry(11,24,16,0,Math.PI*2,0,Math.PI*0.5),std(HR,.9));h.position.set(0,0.8,-0.6);head.add(h)}
+[-3.6,3.6].forEach(x=>Sp(head,1.1,x,1.4,9.4,std(0x111111,.3)));{const m=new T.Mesh(new T.TorusGeometry(3.2,0.45,8,16,Math.PI),std(0xc0392b,.6));m.rotation.z=Math.PI;m.position.set(0,-3.2,9.6);head.add(m)}
+[-10.4,10.4].forEach(x=>Sp(head,2,x,0,0,std(SK,.7)));
+function mkArm(x){const a=new T.Group();a.position.set(x,95.5,0);kidS.add(a);Cy(a,2.7,22,0,-11,0,std(SHT,.7));const e=new T.Group();e.position.set(0,-22,0);a.add(e);Cy(e,2.3,19,0,-9.5,0,std(SK,.7));Sp(e,2.9,0,-20,0,std(SK,.7));return{a:a,e:e}}
+const armL=mkArm(11.5),armR=mkArm(-11.5);B(kidS,22,28,9,0,84,-9.5,std(0x2e90ff,.6));[-6,6].forEach(x=>B(kidS,2.5,26,1,x,86,-4.8,std(0x1c5fb5,.6)));
+function turnTo(a,b,k){let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return a+d*Math.min(1,k)}
+const PAT=[[120,170],[-120,170],[-110,-30],[120,-30]];
+function kidFrame(dt){if(!kid.visible)return;kidT+=dt;const sc=kidH/125,walking=kidAct==='walkto'||kidAct==='patrol';let mv=false;const rx=Rb.position.x,rz=Rb.position.z;
+ if(walking){let tx=rx,tz=rz,sd=85;if(kidAct==='patrol'){const p=PAT[patI];tx=p[0];tz=p[1];sd=0;if(Math.hypot(tx-kid.position.x,tz-kid.position.z)<14)patI=(patI+1)%PAT.length}
+  const dx=tx-kid.position.x,dz=tz-kid.position.z,d=Math.hypot(dx,dz);if(d>sd+3){const st_=Math.min(85*sc*dt,d);kid.position.x+=dx/d*st_;kid.position.z+=dz/d*st_;kid.rotation.y=turnTo(kid.rotation.y,Math.atan2(dx,dz),dt*6);mv=true}else kid.rotation.y=turnTo(kid.rotation.y,Math.atan2(rx-kid.position.x,rz-kid.position.z),dt*5)}
+ else kid.rotation.y=turnTo(kid.rotation.y,Math.atan2(rx-kid.position.x,rz-kid.position.z),dt*3);
+ const w=mv?Math.sin(kidT*7):0;legL.rotation.x=w*0.6;legR.rotation.x=-w*0.6;armL.a.rotation.x=mv?-w*0.5:Math.sin(kidT*1.5)*0.04;armR.a.rotation.x=mv?w*0.5:Math.sin(kidT*1.5+1)*0.04;armL.a.rotation.z=0.06;armR.a.rotation.z=-0.06;armL.e.rotation.x=-0.1;armR.e.rotation.x=-0.1;armR.e.rotation.z=0;
+ if(kidAct==='wave'){armR.a.rotation.x=0;armR.a.rotation.z=-2.7;armR.e.rotation.x=0;armR.e.rotation.z=Math.sin(kidT*9)*0.5}
+ kidS.position.y=mv?Math.abs(Math.sin(kidT*7))*0.8:Math.sin(kidT*2)*0.15;head.rotation.y=Math.sin(kidT*0.8)*0.15}
+// ---- HC-SR04 simulation
+const rcU=new T.Raycaster(),uO=new T.Vector3(),uD=new T.Vector3(),uH=new T.Vector3();const usLine=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,0,1)]),new T.LineBasicMaterial({color:0x35d07f,depthTest:false}));usLine.renderOrder=12;usLine.visible=false;S.add(usLine);
+function usMeasure(){uO.set(0,24,13.6);Rb.localToWorld(uO);let best=400;const objs=[];if(roomG.visible){objs.push(room,furn)}if(kid.visible)objs.push(kid);
+ for(let a=-7;a<=7;a+=3.5){const ang=st.th+a*Math.PI/180;uD.set(Math.sin(ang),0,Math.cos(ang));rcU.set(uO,uD);rcU.far=400;const h=rcU.intersectObjects(objs,true)[0];if(h&&h.distance<best)best=h.distance}
+ st.us=Math.max(2,best);safeK=safetyOn?Math.max(0,Math.min(1,(st.us-25)/35)):1;
+ if(showRay){uH.set(uO.x+Math.sin(st.th)*st.us,uO.y,uO.z+Math.cos(st.th)*st.us);usLine.geometry.setFromPoints([uO.clone(),uH.clone()])}}
+function usTxt(){return st.us>=399?'> 400 cm':st.us.toFixed(0)+' cm'}
+function kidNear(){return roomReady&&kid.visible&&Math.hypot(kid.position.x-Rb.position.x,kid.position.z-Rb.position.z)<120}
+function greetTxt(){return kidNear()?'Hello! Let us learn and play together!':'UI · games · vision · robot dashboard (HP Elite x2)'}
+function autoCtl(){if(robMode!=='follow'||!kid.visible){autoC.t=0;autoC.r=0;return}const dx=kid.position.x-Rb.position.x,dz=kid.position.z-Rb.position.z,d=Math.hypot(dx,dz);let e=Math.atan2(dx,dz)-st.th;while(e>Math.PI)e-=2*Math.PI;while(e<-Math.PI)e+=2*Math.PI;
+ autoC.r=Math.max(-1,Math.min(1,e*1.6));autoC.t=d>55?Math.min(1,(d-55)/60)*0.6*(Math.abs(e)<0.9?1:0.15):0}
+function roomFrame(dt){kidFrame(dt);autoCtl();usT+=dt;if(usT>0.05){usT=0;usMeasure()}usLine.visible=showRay}
+const cV=new T.Vector3();
+function camSpecial(){if(camMode==='child'&&kid.visible){const sc=kidH/125,a=kid.rotation.y;cam.position.set(kid.position.x+Math.sin(a)*8*sc,112*sc,kid.position.z+Math.cos(a)*8*sc);cam.lookAt(Rb.position.x,55,Rb.position.z)}
+ else{cV.set(0,34,15);Rb.localToWorld(cV);cam.position.copy(cV);cam.lookAt(cV.x+Math.sin(st.th)*100,28,cV.z+Math.cos(st.th)*100)}}
+// ---- controls
+function tog(id,on){document.getElementById(id).classList.toggle('on',on)}
+document.getElementById('rmb').onclick=function(){roomG.visible=!roomG.visible;gr.visible=!roomG.visible;this.textContent='Room: '+(roomG.visible?'ON':'OFF');tog('rmb',roomG.visible)};
+document.getElementById('kdb').onclick=function(){kid.visible=!kid.visible;this.textContent='Child: '+(kid.visible?'ON':'OFF');tog('kdb',kid.visible)};
+const AGE=h=>Math.max(4,Math.min(11,Math.round(5+(h-110)/6)));
+document.getElementById('sK').oninput=function(){kidH=+this.value;kidS.scale.setScalar(kidH/125);document.getElementById('vK').textContent=kidH+' cm · ≈ '+AGE(kidH)+' yr'};
+[['k1','idle'],['k2','wave'],['k3','walkto'],['k4','patrol']].forEach(a=>{document.getElementById(a[0]).onclick=()=>{kidAct=a[1];['k1','k2','k3','k4'].forEach(i=>tog(i,i===a[0]))}});
+[['m1','manual'],['m2','follow']].forEach(a=>{document.getElementById(a[0]).onclick=()=>{robMode=a[1];['m1','m2'].forEach(i=>tog(i,i===a[0]))}});
+document.getElementById('sfb').onclick=function(){safetyOn=!safetyOn;tog('sfb',safetyOn);this.textContent=safetyOn?'Obstacle safety':'Obstacle safety: OFF'};
+document.getElementById('ryb').onclick=function(){showRay=!showRay;tog('ryb',showRay)};
+gr.visible=false;
+// ================= REALISTIC ROOM DETAILS =================
+room.material[3]=new T.MeshBasicMaterial({visible:false});
+function paint(col){return new T.MeshStandardMaterial({map:cvTex(512,512,(c,W,H)=>{c.fillStyle=col;c.fillRect(0,0,W,H);for(let i=0;i<9000;i++){c.fillStyle=(i%2?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.035)');c.fillRect(Math.random()*W,Math.random()*H,2,2)}}),roughness:.95,side:T.BackSide})}
+room.material[0]=paint('#e3ebf4');room.material[1]=paint('#e3ebf4');room.material[4]=paint('#f3ecd9');room.material[5]=paint('#dde8f2');
+const floorM=new T.Mesh(new T.PlaneGeometry(600,500),new T.MeshStandardMaterial({map:wood,roughness:.5,metalness:0}));floorM.rotation.x=-Math.PI/2;floorM.position.y=0.02;roomG.add(floorM);
+// wainscot + crown molding
+[[600,90,1.2,0,45,-249.6],[600,90,1.2,0,45,249.6],[1.2,90,500,-299.6,45,0],[1.2,90,500,299.6,45,0]].forEach(a=>B(roomG,a[0],a[1],a[2],a[3],a[4],a[5],std(0x86a9d4,.8)));
+[[600,3,2,0,91.5,-249],[600,3,2,0,91.5,249],[2,3,500,-299,91.5,0],[2,3,500,299,91.5,0]].forEach(a=>B(roomG,a[0],a[1],a[2],a[3],a[4],a[5],std(0xffffff,.7)));
+[[600,6,4,0,277,-248],[600,6,4,0,277,248],[4,6,500,-298,277,0],[4,6,500,298,277,0]].forEach(a=>B(roomG,a[0],a[1],a[2],a[3],a[4],a[5],std(0xffffff,.7)));
+// window frame, sill, glass, curtains
+B(roomG,5,6,132,-297,208,0,std(0xffffff,.6));B(roomG,5,6,132,-297,92,0,std(0xffffff,.6));[-63,63].forEach(z=>B(roomG,5,122,6,-297,150,z,std(0xffffff,.6)));B(roomG,12,4,146,-293,88,0,std(0xffffff,.6));
+[[-85,0xf0b25e],[85,0xf0b25e]].forEach(a=>{for(let k=0;k<4;k++)B(roomG,3+(k%2),135,9,-295,152,a[0]+(k-1.5)*8,std(a[1],.95))});B(roomG,3,3,200,-296,222,0,std(0x8a6a3b,.5,.4));
+// door frame + handle
+[-49,49].forEach(z=>B(roomG,4,206,6,297,103,150+z,std(0xffffff,.6)));B(roomG,4,6,104,297,204,150,std(0xffffff,.6));Sp(roomG,2.2,296,100,116,std(0xd4af37,.3,.9));B(roomG,1,30,30,297.5,35,150,std(0x6e4521,.7));
+// wall clock
+plane(roomG,32,32,-130,218,248.3,cvTex(256,256,(c,W,H)=>{c.fillStyle='#fff';c.beginPath();c.arc(128,128,124,0,7);c.fill();c.strokeStyle='#333';c.lineWidth=8;c.stroke();c.fillStyle='#222';c.font='bold 26px Arial';c.textAlign='center';for(let i=1;i<=12;i++){const a=i*Math.PI/6;c.fillText(i,128+Math.sin(a)*96,138-Math.cos(a)*96)}c.lineWidth=9;c.beginPath();c.moveTo(128,128);c.lineTo(128+Math.sin(0.3)*62,128-Math.cos(0.3)*62);c.stroke();c.lineWidth=6;c.beginPath();c.moveTo(128,128);c.lineTo(128+Math.sin(2)*88,128-Math.cos(2)*88);c.stroke()}),false,Math.PI);
+// bulletin board on the back wall
+plane(roomG,150,90,120,150,-249.3,cvTex(600,360,(c,W,H)=>{c.fillStyle='#c9965a';c.fillRect(0,0,W,H);c.strokeStyle='#7a5328';c.lineWidth=14;c.strokeRect(7,7,W-14,H-14);const cl=['#ff8a80','#82b1ff','#fff176','#a5d6a7','#ce93d8','#ffab91'];for(let i=0;i<9;i++){c.save();c.translate(70+(i%3)*190,70+Math.floor(i/3)*100);c.rotate((i%3-1)*0.06);c.fillStyle=cl[i%6];c.fillRect(-55,-35,110,70);c.fillStyle='rgba(0,0,0,.45)';c.font='bold 22px Arial';c.textAlign='center';c.fillText(['ABC','2+2','RED','CAT','SUN','123','ROBOT','BLUE','HI!'][i],0,8);c.restore()}}),false,0);
+// whiteboard tray + markers, ceiling lights (real light sources)
+B(roomG,200,2,6,0,92,247,std(0x9aa3ad,.5,.5));[[-30,0xd9534f],[-15,0x2e90ff],[0,0x2fb344]].forEach(a=>Cy(roomG,1,10,a[0],93.5,247,std(a[1],.5),'x'));
+[[-150,-100],[150,-100],[-150,100],[150,100]].forEach(p=>{const pl=new T.PointLight(0xfff1d6,0.28,520);pl.position.set(p[0],255,p[1]);roomG.add(pl)});
+// foam puzzle mat
+for(let i=0;i<3;i++)for(let j=0;j<3;j++)B(roomG,48.5,1,48.5,20+i*50,0.9,85+j*50,std([0xe74c3c,0x3498db,0xf1c40f,0x2ecc71][(i+j)%4],.8));
+// toy shelf with bins, balls and a teddy bear
+{const g=new T.Group();g.position.set(-282,0,170);g.rotation.y=Math.PI/2;furn.add(g);B(g,110,50,30,0,25,0,std(0xcaa472,.7));[0,1,2].forEach(i=>B(g,30,22,26,-34+i*34,25+ (i%2)*0,3,std([0x2e90ff,0xf58220,0x2fb344][i],.7)));
+ [[0xd9534f,-40],[0xf0c040,-20]].forEach(a=>Sp(g,7,a[1],57,0,std(a[0],.5)));Sp(g,8,30,58,0,std(0xb07a4a,.9));Sp(g,5.5,30,69,0,std(0xb07a4a,.9));Sp(g,2.4,25.5,73,0,std(0xb07a4a,.9));Sp(g,2.4,34.5,73,0,std(0xb07a4a,.9))}
+// plant, bin
+Cy(roomG,10,18,270,9,215,std(0xc65d3a,.8));Cy(roomG,9,1,270,18,215,std(0x3b2a1a,1));for(let i=0;i<10;i++){const a=i*0.63;Sp(roomG,6+(i%3),270+Math.sin(a)*8,30+i*3.2,215+Math.cos(a)*8,std(i%2?0x2e8b3d:0x3fa34d,.8),1,0.7,1)}Cy(roomG,9,25,255,12.5,-235,std(0x7a7f87,.6,.4));
+// shadows + reflections
+function shadowAll(){[Rb,kid,furn,roomG].forEach(g=>g.traverse(o=>{if(o.isMesh){o.castShadow=(g!==roomG||o.parent!==roomG)||true;o.receiveShadow=true;const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m&&m.isMeshStandardMaterial&&m.envMapIntensity!==undefined)m.envMapIntensity=0.45})}}));room.castShadow=false;floorM.castShadow=false}
+shadowAll();
+document.getElementById('shb').onclick=function(){d1.castShadow=!d1.castShadow;this.classList.toggle('on',d1.castShadow);this.textContent=d1.castShadow?'Shadows':'Shadows: OFF'};
+try{const rt=new T.WebGLCubeRenderTarget(256),cc=new T.CubeCamera(1,1500,rt);cc.position.set(0,90,60);S.add(cc);const rv=Rb.visible,kv=kid.visible;Rb.visible=false;kid.visible=false;cc.update(R_,S);Rb.visible=rv;kid.visible=kv;S.environment=rt.texture}catch(e){}
+roomReady=true;th=0.75;tt=0.75;ph=1.1;tp=1.1;rad=560;tr=560;OFF.set(0,60,40);OFFt.set(0,60,40);
+{const vb=document.querySelectorAll('#views .bt');vb.forEach(b=>b.classList.toggle('on',b.textContent==='Room'))}
+buildWires();applyView();refreshAll();shadowAll();
 let last=performance.now(),hudT=0;
 function loop(now){const dt=Math.min(0.05,(now-last)/1000||0.016);last=now;
  if(auto&&!drag){th+=0.006;tt=th}else if(!drag){th+=(tt-th)*0.12;ph+=(tp-ph)*0.12}rad+=(tr-rad)*0.12;OFF.lerp(OFFt,0.12);
- if(vrMode==='xr')vrFrame(dt);guideFrame(dt);step(dt);tele(dt);if(vrMode==='card')cardFrame();else if(vrMode===null)upd();hudT+=dt;if(hudT>0.3){hudT=0;drawScr()}if(vrMode==='card')renderCard();else R_.render(S,cam)}
+ if(vrMode==='xr')vrFrame(dt);guideFrame(dt);roomFrame(dt);step(dt);tele(dt);if(vrMode==='card')cardFrame();else if(vrMode===null)upd();hudT+=dt;if(hudT>0.3){hudT=0;drawScr()}if(vrMode==='card')renderCard();else R_.render(S,cam)}
 R_.setAnimationLoop(loop);
 </script>
 </body></html>
